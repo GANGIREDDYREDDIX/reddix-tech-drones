@@ -33,8 +33,14 @@ export default function ScrollSequenceCanvas() {
     context.imageSmoothingEnabled = true;
     context.imageSmoothingQuality = "high";
 
-    // Calculate cover scale (like object-fit: cover) and add the 1.3 zoom factor to hide watermark
-    const scale = 1.3 * Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    // On portrait screens (mobile), the sides are heavily cropped anyway, 
+    // so we don't need the aggressive 1.3x zoom to hide the watermark.
+    // Zooming out to 1.05x makes the drone look much better framed on phones.
+    const isPortrait = rect.height > rect.width;
+    const zoomMultiplier = isPortrait ? 1.05 : 1.3;
+    
+    // Calculate cover scale (like object-fit: cover) 
+    const scale = zoomMultiplier * Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
     const drawWidth = img.naturalWidth * scale;
     const drawHeight = img.naturalHeight * scale;
 

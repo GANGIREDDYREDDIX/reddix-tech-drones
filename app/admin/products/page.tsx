@@ -14,6 +14,8 @@ interface Product {
   description: string;
   inStock: boolean;
   stockQuantity: number;
+  features?: string[];
+  specs?: Record<string, string>;
 }
 
 export default function AdminProducts() {

@@ -14,6 +14,38 @@ export default function ScrollSequenceCanvas() {
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const { scrollYProgress } = useScroll();
 
+  const renderCanvasFrame = (img: HTMLImageElement) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    // Get the CSS display size
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    // Set actual internal dimensions to match display dimensions exactly (accounting for retina screens)
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+
+    // Normalize coordinates so we can draw in CSS pixels
+    context.scale(dpr, dpr);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+
+    // Calculate cover scale (like object-fit: cover) and add the 1.3 zoom factor to hide watermark
+    const scale = 1.3 * Math.max(rect.width / img.naturalWidth, rect.height / img.naturalHeight);
+    const drawWidth = img.naturalWidth * scale;
+    const drawHeight = img.naturalHeight * scale;
+
+    // Center the image
+    const offsetX = (rect.width - drawWidth) / 2;
+    const offsetY = (rect.height - drawHeight) / 2;
+
+    context.clearRect(0, 0, rect.width, rect.height);
+    context.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+  };
+
   // Preload images
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
@@ -25,7 +57,7 @@ export default function ScrollSequenceCanvas() {
       img.onload = () => {
         loadedCount++;
         if (loadedCount === FRAME_COUNT) {
-          // Draw the first frame once all are loaded, or as soon as the first is loaded
+          // All loaded
         }
       };
       loadedImages.push(img);
@@ -37,18 +69,23 @@ export default function ScrollSequenceCanvas() {
     const img = new Image();
     img.src = currentFrame(1);
     img.onload = () => {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const context = canvas.getContext("2d");
-        if (context) {
-          // Use natural resolution of the image
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          context.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
+      renderCanvasFrame(img);
+    };
+
+    // Re-render on window resize to maintain sharpness and cover effect
+    const handleResize = () => {
+      const latest = scrollYProgress.get();
+      const frameIndex = Math.min(
+        FRAME_COUNT - 1,
+        Math.max(0, Math.floor(latest * FRAME_COUNT))
+      );
+      if (loadedImages[frameIndex] && loadedImages[frameIndex].complete) {
+        renderCanvasFrame(loadedImages[frameIndex]);
       }
     };
-  }, []);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [scrollYProgress]);
 
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     if (images.length === 0) return;
@@ -61,19 +98,7 @@ export default function ScrollSequenceCanvas() {
 
     const img = images[frameIndex];
     if (img && img.complete) {
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const context = canvas.getContext("2d");
-        if (context) {
-          // Ensure canvas dimensions match image dimensions to maintain sharpness
-          if (canvas.width !== img.naturalWidth || canvas.height !== img.naturalHeight) {
-            canvas.width = img.naturalWidth || 1920;
-            canvas.height = img.naturalHeight || 1080;
-          }
-          context.clearRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(img, 0, 0, canvas.width, canvas.height);
-        }
-      }
+      renderCanvasFrame(img);
     }
   });
 

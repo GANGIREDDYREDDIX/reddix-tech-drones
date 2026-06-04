@@ -1,0 +1,220 @@
+.main {
+  position: relative;
+  background-color: var(--background-primary);
+  min-height: 100vh;
+}
+
+.scrollContainer {
+  position: relative;
+  height: 500vh; /* 400vh + 100vh for extra space */
+}
+
+.stickyCanvasContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 1; /* Below the overlays */
+  pointer-events: none; /* Let clicks pass through to sections */
+}
+
+.stickyCanvasContainer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Dark overlay to improve text contrast */
+  z-index: 2;
+}
+
+.storytellingOverlays {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none; /* Let scroll events pass through */
+}
+
+.section {
+  position: absolute;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 10vw;
+  pointer-events: auto; /* Re-enable pointer events for buttons/links */
+}
+
+/* Specific Section Alignments based on User Request */
+.heroSection {
+  top: 0vh;
+  align-items: center;
+  text-align: center;
+}
+
+.flightSection {
+  top: 100vh;
+  align-items: flex-start;
+  text-align: left;
+  padding-left: 10vw;
+}
+
+.safetySection {
+  top: 200vh;
+  align-items: flex-end;
+  text-align: right;
+  padding-right: 10vw;
+}
+
+.cameraSection {
+  top: 300vh;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.ctaSection {
+  top: 400vh;
+  align-items: center;
+  text-align: center;
+}
+
+/* Typography styles */
+.headline {
+  font-size: 4rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.subheadline {
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  max-width: 600px;
+}
+
+.bodyCopy {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  max-width: 450px;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.ctaButtonGroup {
+  display: flex;
+  gap: 16px;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+.primaryCTA {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 100px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 80, 255, 0.4);
+}
+
+.primaryCTA:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 25px rgba(0, 214, 255, 0.5);
+}
+
+.secondaryCTA {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.secondaryCTA:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.microcopy {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Bullet list for safety section */
+.featureList {
+  list-style: none;
+  margin: 1.5rem 0;
+  text-align: right;
+}
+
+.featureList li {
+  font-size: 1.125rem;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.featureList li::before {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-cyan);
+  border-radius: 50%;
+}
+
+@media (max-width: 768px) {
+  .headline { 
+    font-size: 2.2rem; 
+    line-height: 1.1;
+  }
+  .subheadline {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+  .bodyCopy {
+    font-size: 1rem;
+    max-width: 100%;
+  }
+  .section {
+    padding: 0 20px !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+  .featureList {
+    text-align: center;
+  }
+  .featureList li {
+    justify-content: center;
+    font-size: 1rem;
+  }
+  .ctaButtonGroup {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+  .primaryCTA, .secondaryCTA {
+    width: 100%;
+    text-align: center;
+  }
+  .microcopy {
+    font-size: 0.75rem;
+  }
+}

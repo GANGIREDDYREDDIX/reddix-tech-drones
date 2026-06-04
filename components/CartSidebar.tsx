@@ -5,9 +5,11 @@ import { useCart } from "@/context/CartContext";
 import styles from "./CartSidebar.module.css";
 import clsx from "clsx";
 import Link from "next/link";
+import { useCurrency } from "@/context/CurrencyContext";
 
 export default function CartSidebar() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, removeFromCart, cartTotal } = useCart();
+  const { formatCurrency, loading: currencyLoading } = useCurrency();
 
   return (
     <>
@@ -37,7 +39,7 @@ export default function CartSidebar() {
                 <img src={item.image} alt={item.name} className={styles.itemImage} />
                 <div className={styles.itemDetails}>
                   <h4 className={styles.itemName}>{item.name}</h4>
-                  <div className={styles.itemPrice}>${item.price.toLocaleString()}</div>
+                  <div className={styles.itemPrice}>{!currencyLoading ? formatCurrency(item.price) : "..."}</div>
                   
                   <div className={styles.itemControls}>
                     <div className={styles.quantityControl}>
@@ -73,7 +75,7 @@ export default function CartSidebar() {
           <div className={styles.footer}>
             <div className={styles.summaryRow}>
               <span>Subtotal</span>
-              <span>${cartTotal.toLocaleString()}</span>
+              <span>{!currencyLoading ? formatCurrency(cartTotal) : "..."}</span>
             </div>
             <div className={styles.summaryRow}>
               <span>Shipping</span>
@@ -81,7 +83,7 @@ export default function CartSidebar() {
             </div>
             <div className={styles.summaryTotal}>
               <span>Total</span>
-              <span>${cartTotal.toLocaleString()}</span>
+              <span>{!currencyLoading ? formatCurrency(cartTotal) : "..."}</span>
             </div>
             
             <button 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, X } from "lucide-react";
 import styles from "./discounts.module.css";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface Discount {
   id: string;
@@ -17,6 +18,7 @@ interface Discount {
 export default function AdminDiscounts() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
+  const { formatCurrency, loading: currencyLoading } = useCurrency();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<Discount>>({
     code: "", type: "percentage", value: 10, expiry: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 16)
@@ -104,8 +106,8 @@ export default function AdminDiscounts() {
               <tr key={discount.id}>
                 <td><span className={styles.codeBadge}>{discount.code}</span></td>
                 <td style={{textTransform: 'capitalize'}}>{discount.type}</td>
-                <td className={styles.textRight}>
-                  {discount.type === 'percentage' ? `${discount.value}%` : `₹${(discount.value * 83).toLocaleString('en-IN')}`}
+                <td className={styles.textRight} style={{fontWeight: 600}}>
+                  {discount.type === 'percentage' ? `${discount.value}%` : (!currencyLoading ? formatCurrency(discount.value) : "...")}
                 </td>
                 <td>
                   <span className={`${styles.statusBadge} ${styles[discount.status.toLowerCase()]}`}>
@@ -156,7 +158,7 @@ export default function AdminDiscounts() {
                   <label>Discount Type</label>
                   <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount (₹)</option>
+                    <option value="fixed">Fixed Amount</option>
                   </select>
                 </div>
                 <div className={styles.formGroup}>

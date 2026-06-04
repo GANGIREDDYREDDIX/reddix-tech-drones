@@ -103,7 +103,7 @@ export default function AdminSettings() {
             <h2 className={styles.sectionTitle}>Shipping Rates</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div className={styles.formGroup}>
-                <label>Domestic Shipping (₹)</label>
+                <label>Domestic Shipping</label>
                 <input 
                   type="number" 
                   className={styles.input} 
@@ -112,7 +112,7 @@ export default function AdminSettings() {
                 />
               </div>
               <div className={styles.formGroup}>
-                <label>International Shipping (₹)</label>
+                <label>International Shipping</label>
                 <input 
                   type="number" 
                   className={styles.input} 

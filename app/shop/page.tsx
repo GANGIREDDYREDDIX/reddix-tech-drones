@@ -8,6 +8,7 @@ import styles from "./shop.module.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import CartSidebar from "@/components/CartSidebar";
+import { useCurrency } from "@/context/CurrencyContext";
 
 export default function Shop() {
   const { addToCart } = useCart();
@@ -17,6 +18,7 @@ export default function Shop() {
   const [addedId, setAddedId] = useState<string | null>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { formatCurrency, loading: currencyLoading } = useCurrency();
 
   useEffect(() => {
     fetch('/api/products')
@@ -78,7 +80,7 @@ export default function Shop() {
         <section className={styles.trustBadges}>
           <div className={styles.trustItem}>
             <Truck size={20} />
-            <span>Free Shipping over ₹10,000</span>
+            <span>Free Shipping over {!currencyLoading ? formatCurrency(120) : "..."}</span>
           </div>
           <div className={styles.trustItem}>
             <Shield size={20} />
@@ -222,9 +224,9 @@ export default function Shop() {
                     {/* Price + CTA */}
                     <div className={styles.cardFooter}>
                       <div className={styles.priceBlock}>
-                        <span className={styles.price}>₹{(product.price * 83).toLocaleString("en-IN")}</span>
+                        <span className={styles.price}>{!currencyLoading ? formatCurrency(product.price) : "..."}</span>
                         {product.originalPrice && (
-                          <span className={styles.originalPrice}>₹{(product.originalPrice * 83).toLocaleString("en-IN")}</span>
+                          <span className={styles.originalPrice}>{!currencyLoading ? formatCurrency(product.originalPrice) : "..."}</span>
                         )}
                       </div>
 

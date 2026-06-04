@@ -199,6 +199,10 @@
     align-items: center !important;
     text-align: center !important;
   }
+  .heroSection {
+    justify-content: flex-start !important;
+    padding-top: 12vh !important;
+  }
   .featureList {
     text-align: center;
   }

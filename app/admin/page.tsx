@@ -99,7 +99,7 @@ export default function AdminDashboard() {
                   <Tooltip 
                     contentStyle={{ backgroundColor: 'var(--background-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                     itemStyle={{ color: 'var(--accent-blue)', fontWeight: 600 }}
-                    formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                    formatter={(value: any) => [formatCurrency(value), "Revenue"]}
                   />
                   <Area type="monotone" dataKey="revenue" stroke="var(--accent-blue)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
                 </AreaChart>

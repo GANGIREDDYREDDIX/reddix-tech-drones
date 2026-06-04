@@ -1,10 +1,27 @@
 :root {
   --background-primary: #050505;
   --background-secondary: #0A0A0C;
+  --text-primary-rgb: 255, 255, 255;
   --text-primary: rgba(255, 255, 255, 0.9);
   --text-secondary: rgba(255, 255, 255, 0.6);
   --accent-blue: #0050FF;
   --accent-cyan: #00D6FF;
+  --canvas-overlay: rgba(0, 0, 0, 0.4);
+  --nav-bg: rgba(10, 10, 12, 0.7);
+  --nav-border: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] {
+  --background-primary: #ffffff;
+  --background-secondary: #f5f5f7;
+  --text-primary-rgb: 0, 0, 0;
+  --text-primary: rgba(0, 0, 0, 0.9);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --accent-blue: #0050FF;
+  --accent-cyan: #0099cc;
+  --canvas-overlay: rgba(0, 0, 0, 0.4);
+  --nav-bg: rgba(255, 255, 255, 0.85);
+  --nav-border: rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -20,6 +37,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
@@ -60,9 +78,31 @@ button {
 
 /* Gradient Text Utility */
 .gradient-text {
-  background: linear-gradient(to right, #FFFFFF, var(--accent-cyan));
+  background: linear-gradient(to right, var(--text-primary), var(--accent-cyan));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   color: transparent;
+}
+
+/* View Transition Animation (Expanding Circle) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+[data-theme="dark"]::view-transition-old(root) {
+  z-index: 9999;
+}
+[data-theme="dark"]::view-transition-new(root) {
+  z-index: 1;
 }

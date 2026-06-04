@@ -1,0 +1,67 @@
+{
+  "orders": [
+    {
+      "id": "ORD-7294",
+      "date": "2026-06-04T17:47:04.402Z",
+      "customer": {
+        "name": "John Doe",
+        "email": "john@example.com",
+        "address": "123 Tech Lane, Silicon Valley, CA 94025"
+      },
+      "items": [
+        {
+          "productId": "reddix-pro-drone",
+          "name": "Reddix Pro X1 Drone",
+          "price": 2499,
+          "quantity": 1
+        }
+      ],
+      "total": 2499,
+      "status": "Restocked",
+      "paymentMethod": "Credit Card (Stripe)",
+      "notes": "Please leave at back door."
+    },
+    {
+      "id": "ORD-7293",
+      "date": "2026-06-03T19:47:04.402Z",
+      "customer": {
+        "name": "Tech Corp",
+        "email": "procurement@techcorp.io",
+        "address": "400 Enterprise Blvd, Austin, TX 73301"
+      },
+      "items": [
+        {
+          "productId": "thermal-inspection-drone",
+          "name": "Reddix Thermal IR",
+          "price": 5499,
+          "quantity": 1
+        }
+      ],
+      "total": 5499,
+      "status": "Shipped",
+      "paymentMethod": "Purchase Order",
+      "notes": "PO# 882910"
+    },
+    {
+      "id": "ORD-7292",
+      "date": "2026-06-01T19:47:04.402Z",
+      "customer": {
+        "name": "Sarah Smith",
+        "email": "sarah.s@gmail.com",
+        "address": "8910 Studio Way, Los Angeles, CA 90028"
+      },
+      "items": [
+        {
+          "productId": "smart-controller-v2",
+          "name": "Smart Controller V2",
+          "price": 449,
+          "quantity": 1
+        }
+      ],
+      "total": 449,
+      "status": "Delivered",
+      "paymentMethod": "PayPal",
+      "notes": ""
+    }
+  ]
+}

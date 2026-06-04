@@ -196,7 +196,7 @@
   padding: 16px;
   border-radius: 100px;
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
-  color: white;
+  color: var(--text-primary);
   font-weight: 600;
   font-size: 1rem;
   transition: transform 0.2s, box-shadow 0.2s;

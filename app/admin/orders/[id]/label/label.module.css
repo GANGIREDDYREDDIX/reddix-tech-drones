@@ -1,0 +1,169 @@
+.page {
+  background-color: white;
+  min-height: 100vh;
+  padding: 40px;
+  color: black;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.labelContainer {
+  width: 100%;
+  max-width: 10cm;
+  border: 2px solid black;
+  background: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  border-bottom: 2px solid black;
+  padding: 16px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.header p {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.section {
+  padding: 16px;
+  border-bottom: 1px solid black;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.address {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin: 0;
+  font-weight: 500;
+}
+
+.shippingMethod {
+  font-size: 1.4rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 10px 0;
+  border: 2px solid black;
+  padding: 8px;
+  text-transform: uppercase;
+}
+
+.barcodeSection {
+  text-align: center;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Simulated barcode using div borders */
+.barcode {
+  height: 60px;
+  width: 80%;
+  max-width: 250px;
+  background: repeating-linear-gradient(
+    to right,
+    black 0, black 3px,
+    transparent 3px, transparent 6px,
+    black 6px, black 12px,
+    transparent 12px, transparent 15px
+  );
+  /* A slightly more complex pattern */
+  background: repeating-linear-gradient(
+    to right,
+    black 0px, black 4px,
+    transparent 4px, transparent 7px,
+    black 7px, black 9px,
+    transparent 9px, transparent 13px,
+    black 13px, black 17px,
+    transparent 17px, transparent 18px
+  );
+}
+
+.trackingId {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.printBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* Print specific rules */
+@media print {
+  @page {
+    margin: 0; /* Remove default browser margins */
+    size: 4in 6in; /* Standard shipping label size */
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: white;
+  }
+
+  /* Hide print button */
+  .printBtn {
+    display: none !important;
+  }
+
+  .page {
+    padding: 0;
+    margin: 0;
+    align-items: flex-start;
+  }
+
+  .labelContainer {
+    border: none; /* Physical label edges are the border */
+    max-width: 100%;
+    width: 4in;
+    height: 6in;
+    box-sizing: border-box;
+    padding: 10px;
+  }
+}

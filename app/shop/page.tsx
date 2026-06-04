@@ -1,12 +1,12 @@
 "use client";
 
 import Navigation from "@/components/Navigation";
-import { products, categories } from "@/data/products";
+import { categories, type Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
 import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search } from "lucide-react";
 import styles from "./shop.module.css";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import CartSidebar from "@/components/CartSidebar";
 
 export default function Shop() {
@@ -15,9 +15,24 @@ export default function Shop() {
   const [sortBy, setSortBy] = useState("featured");
   const [searchQuery, setSearchQuery] = useState("");
   const [addedId, setAddedId] = useState<string | null>(null);
+  const [dbProducts, setDbProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/products')
+      .then(res => res.json())
+      .then(data => {
+        setDbProducts(data || []);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setIsLoading(false);
+      });
+  }, []);
 
   const filteredProducts = useMemo(() => {
-    let result = products;
+    let result = dbProducts;
     if (activeCategory !== "All") {
       result = result.filter(p => p.category === activeCategory);
     }
@@ -31,9 +46,9 @@ export default function Shop() {
     if (sortBy === "price-desc") result = [...result].sort((a, b) => b.price - a.price);
     if (sortBy === "rating") result = [...result].sort((a, b) => b.rating - a.rating);
     return result;
-  }, [activeCategory, sortBy, searchQuery]);
+  }, [activeCategory, sortBy, searchQuery, dbProducts]);
 
-  const handleAddToCart = (product: typeof products[0]) => {
+  const handleAddToCart = (product: Product) => {
     addToCart(product);
     setAddedId(product.id);
     setTimeout(() => setAddedId(null), 1500);

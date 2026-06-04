@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import styles from "./Navigation.module.css";
 import clsx from "clsx";
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navigation() {
   const { scrollY } = useScroll();
@@ -36,6 +37,7 @@ export default function Navigation() {
         </ul>
 
         <div className={styles.ctaContainer}>
+          <ThemeToggle />
           <button 
             className={styles.cartButton} 
             onClick={() => setIsCartOpen(true)}

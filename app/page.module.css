@@ -72,10 +72,11 @@
   padding-right: 10vw;
 }
 
-.cameraSection {
+.enterpriseSection {
   top: 300vh;
   align-items: flex-start;
   text-align: left;
+  padding-left: 10vw;
 }
 
 .ctaSection {

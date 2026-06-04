@@ -101,7 +101,24 @@ export default function Home() {
               <li>Sub-Millimeter Tolerance</li>
             </ul>
           </motion.section>
-
+          {/* Section 4: Enterprise Solutions */}
+          <motion.section 
+            id="enterprise"
+            className={clsx(styles.section, styles.enterpriseSection)}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ amount: 0.4, margin: "-100px 0px" }}
+            variants={fadeRightVariant}
+          >
+            <h2 className={styles.headline}>Intelligent <br /><span className="gradient-text">Enterprise Software.</span></h2>
+            <p className={styles.subheadline}>Data-Driven Operations & Payload Integration</p>
+            <p className={styles.bodyCopy}>
+              We don't just build hardware. Our custom enterprise applications seamlessly integrate with your fleet to provide real-time telemetry, advanced AI analytics, and thermal data mapping.
+            </p>
+            <p className={styles.bodyCopy}>
+              Securely stream, process, and analyze your critical aerial data natively within your existing enterprise workflow.
+            </p>
+          </motion.section>
 
           {/* Section 5: CTA */}
           <motion.section 

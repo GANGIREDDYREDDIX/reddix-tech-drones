@@ -7,19 +7,22 @@ import styles from "./admin.module.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCurrency } from "@/context/CurrencyContext";
 
+import { createClient } from '@/utils/supabase/client';
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currency, setCurrency, loading } = useCurrency();
 
   // Don't show the shell on the login page
-  if (pathname === '/admin/login') {
+  if (pathname === '/admin/login' || pathname === '/login') {
     return <>{children}</>;
   }
 
   const handleLogout = async () => {
-    await fetch('/api/auth', { method: 'DELETE' });
-    router.push('/admin/login');
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
   };
 
   const navItems = [

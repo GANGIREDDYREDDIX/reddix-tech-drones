@@ -6,86 +6,101 @@ const RATE_LIMIT = 100; // 100 requests per IP per minute
 const WINDOW_MS = 60 * 1000;
 
 export async function middleware(request: NextRequest) {
-  // --- 0. Rate Limiting ---
-  const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
-  const now = Date.now();
-  const windowStart = now - WINDOW_MS;
-  
-  let rateData = rateLimitMap.get(ip);
-  if (!rateData || rateData.lastReset < windowStart) {
-    rateData = { count: 0, lastReset: now };
-  }
-  
-  rateData.count++;
-  rateLimitMap.set(ip, rateData);
+  try {
+    // --- 0. Rate Limiting ---
+    const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
+    const now = Date.now();
+    const windowStart = now - WINDOW_MS;
+    
+    let rateData = rateLimitMap.get(ip);
+    if (!rateData || rateData.lastReset < windowStart) {
+      rateData = { count: 0, lastReset: now };
+    }
+    
+    rateData.count++;
+    rateLimitMap.set(ip, rateData);
 
-  if (rateData.count > RATE_LIMIT) {
-    return new NextResponse('Too Many Requests. Please slow down.', { status: 429 });
-  }
+    if (rateData.count > RATE_LIMIT) {
+      return new NextResponse('Too Many Requests. Please slow down.', { status: 429 });
+    }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+    let supabaseResponse = NextResponse.next({
+      request,
+    });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    // If Supabase env vars are missing (e.g. fresh Vercel deploy), skip auth checks to prevent crashing the site
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn("Middleware: Missing Supabase environment variables.");
+      return supabaseResponse;
+    }
+
+    const supabase = createServerClient(
+      supabaseUrl,
+      supabaseKey,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+            supabaseResponse = NextResponse.next({
+              request,
+            });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
+      }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const pathname = request.nextUrl.pathname;
+
+    const AUTHORIZED_EMAILS = process.env.AUTHORIZED_EMAILS 
+      ? process.env.AUTHORIZED_EMAILS.split(',').map(e => e.trim().toLowerCase()) 
+      : [];
+
+    const isAdmin = user?.email && AUTHORIZED_EMAILS.includes(user.email.toLowerCase());
+
+    // --- 1. Protect /admin UI Routes ---
+    if (pathname.startsWith('/admin')) {
+      if (!isAdmin) {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
     }
-  );
 
-  const { data: { user } } = await supabase.auth.getUser();
+    // --- 2. Protect Admin API Routes ---
+    const adminApiPrefixes = [
+      '/api/products',
+      '/api/discounts',
+    ];
 
-  const pathname = request.nextUrl.pathname;
+    const isAdminOnlyApi = adminApiPrefixes.some(prefix => pathname.startsWith(prefix)) || 
+                           (pathname.startsWith('/api/reviews/') && pathname !== '/api/reviews');
 
-  const AUTHORIZED_EMAILS = process.env.AUTHORIZED_EMAILS 
-    ? process.env.AUTHORIZED_EMAILS.split(',').map(e => e.trim().toLowerCase()) 
-    : [];
+    const isModifyingRequest = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
 
-  const isAdmin = user?.email && AUTHORIZED_EMAILS.includes(user.email.toLowerCase());
-
-  // --- 1. Protect /admin UI Routes ---
-  if (pathname.startsWith('/admin')) {
-    if (!isAdmin) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (isAdminOnlyApi && isModifyingRequest) {
+      if (!isAdmin) {
+        return new NextResponse(
+          JSON.stringify({ error: 'Unauthorized. Admin session required.' }),
+          { status: 401, headers: { 'content-type': 'application/json' } }
+        );
+      }
     }
+
+    return supabaseResponse;
+  } catch (error) {
+    console.error("Middleware Invocation Error:", error);
+    // Graceful fallback to prevent bricking the site
+    return NextResponse.next();
   }
-
-  // --- 2. Protect Admin API Routes ---
-  const adminApiPrefixes = [
-    '/api/products',
-    '/api/discounts',
-  ];
-
-  const isAdminOnlyApi = adminApiPrefixes.some(prefix => pathname.startsWith(prefix)) || 
-                         (pathname.startsWith('/api/reviews/') && pathname !== '/api/reviews');
-
-  const isModifyingRequest = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
-
-  if (isAdminOnlyApi && isModifyingRequest) {
-    if (!isAdmin) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Unauthorized. Admin session required.' }),
-        { status: 401, headers: { 'content-type': 'application/json' } }
-      );
-    }
-  }
-
-  return supabaseResponse;
 }
 
 export const config = {

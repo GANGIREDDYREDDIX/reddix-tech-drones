@@ -30,6 +30,9 @@
   display: flex;
   gap: 32px;
   list-style: none;
+  flex: 1;
+  justify-content: flex-end;
+  margin-right: 32px;
 }
 
 .navLinks a {
@@ -191,4 +194,22 @@
   .ctaButton {
     display: none; /* Hide primary CTA on mobile nav to save space */
   }
+}
+
+.dropdownItem {
+  display: block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: var(--text-primary, #111827);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: var(--bg-secondary, #f3f4f6);
 }

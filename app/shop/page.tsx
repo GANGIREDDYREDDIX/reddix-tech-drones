@@ -3,14 +3,17 @@
 import Navigation from "@/components/Navigation";
 import { categories, type Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search } from "lucide-react";
+import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search, ChevronLeft } from "lucide-react";
 import styles from "./shop.module.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import CartSidebar from "@/components/CartSidebar";
 import { useCurrency } from "@/context/CurrencyContext";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Shop() {
+  const router = useRouter();
   const { addToCart } = useCart();
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("featured");
@@ -19,6 +22,10 @@ export default function Shop() {
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { formatCurrency, loading: currencyLoading } = useCurrency();
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, customerName: "", text: "" });
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     fetch('/api/products')
@@ -56,11 +63,48 @@ export default function Shop() {
     setTimeout(() => setAddedId(null), 1500);
   };
 
+  const openReviewModal = (product: Product) => {
+    setReviewProduct(product);
+    setReviewForm({ rating: 5, customerName: "", text: "" });
+    setReviewModalOpen(true);
+  };
+
+  const submitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewProduct) return;
+    setSubmittingReview(true);
+    try {
+      await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: reviewProduct.id,
+          rating: reviewForm.rating,
+          customerName: reviewForm.customerName,
+          text: reviewForm.text
+        })
+      });
+      setReviewModalOpen(false);
+      alert("Review submitted successfully! It will appear once approved by a moderator.");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to submit review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   return (
     <>
       <Navigation />
       <CartSidebar />
       <main className={styles.shopContainer}>
+        {/* ─── Back Button ─── */}
+        <div style={{ padding: '20px 5% 0' }}>
+          <button onClick={() => router.back()} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#666', textDecoration: 'none', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>
+            <ChevronLeft size={20} /> Back
+          </button>
+        </div>
 
         {/* ─── Hero Banner ─── */}
         <section className={styles.shopHero}>
@@ -178,7 +222,7 @@ export default function Shop() {
 
                   {/* Image */}
                   <div className={styles.imageContainer}>
-                    <img src={product.image} alt={product.name} className={styles.productImage} />
+                    <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
                     {!product.inStock && <div className={styles.outOfStock}>Out of Stock</div>}
                   </div>
 
@@ -202,6 +246,7 @@ export default function Shop() {
                         ))}
                       </div>
                       <span className={styles.ratingText}>{product.rating} ({product.reviewCount} reviews)</span>
+                      <button className={styles.writeReviewBtn} onClick={() => openReviewModal(product)}>Write a Review</button>
                     </div>
 
                     {/* Features */}
@@ -333,6 +378,69 @@ export default function Shop() {
           </div>
         </footer>
       </main>
+
+      {/* ─── Review Modal ─── */}
+      {reviewModalOpen && reviewProduct && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h2>Review: {reviewProduct.name}</h2>
+              <button className={styles.closeBtn} onClick={() => setReviewModalOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={submitReview} className={styles.modalBody}>
+              <div className={styles.formGroup}>
+                <label>Rating</label>
+                <div className={styles.starRating}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button 
+                      key={star} 
+                      type="button" 
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    >
+                      <Star 
+                        size={24} 
+                        fill={star <= reviewForm.rating ? "#f5a623" : "transparent"} 
+                        stroke={star <= reviewForm.rating ? "#f5a623" : "#666"} 
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label>Your Name</label>
+                <input 
+                  required 
+                  placeholder="e.g. John D." 
+                  value={reviewForm.customerName} 
+                  onChange={e => setReviewForm({ ...reviewForm, customerName: e.target.value })} 
+                />
+              </div>
+
+              <div className={styles.formGroup}>
+                <label>Your Review</label>
+                <textarea 
+                  required 
+                  rows={4} 
+                  placeholder="What did you think about this product?" 
+                  value={reviewForm.text} 
+                  onChange={e => setReviewForm({ ...reviewForm, text: e.target.value })} 
+                ></textarea>
+              </div>
+
+              <div className={styles.modalFooter} style={{ padding: '0', marginTop: '10px', border: 'none' }}>
+                <button type="button" className={styles.cancelBtn} onClick={() => setReviewModalOpen(false)}>Cancel</button>
+                <button type="submit" className={styles.submitBtn} disabled={submittingReview}>
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

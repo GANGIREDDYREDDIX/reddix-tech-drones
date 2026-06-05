@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, Bell, Search, Tag, ClipboardList, RotateCcw, Star, ShoppingBag, MessageSquare, Shield } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, Bell, Search, Tag, ClipboardList, RotateCcw, Star, ShoppingBag, MessageSquare, Shield, FileText } from "lucide-react";
 import styles from "./admin.module.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -27,9 +27,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Products", href: "/admin/products", icon: Package },
     { name: "Inventory", href: "/admin/inventory", icon: ClipboardList },
     { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+    { name: "Price Requests", href: "/admin/price-requests", icon: FileText },
     { name: "Returns (RTO)", href: "/admin/rto", icon: RotateCcw },
     { name: "Abandoned Carts", href: "/admin/abandoned-carts", icon: ShoppingBag },
     { name: "Customers", href: "/admin/customers", icon: Users },
+    { name: "Points & Rewards", href: "/admin/rewards", icon: Star },
     { name: "Reviews", href: "/admin/reviews", icon: Star },
     { name: "Discounts", href: "/admin/discounts", icon: Tag },
     { name: "Support", href: "/admin/support", icon: MessageSquare },

@@ -16,6 +16,10 @@ interface Product {
   stockQuantity: number;
   features?: string[];
   specs?: Record<string, string>;
+  badge?: string;
+  tagline?: string;
+  rating?: number;
+  reviews?: number;
 }
 
 export default function AdminProducts() {
@@ -25,7 +29,7 @@ export default function AdminProducts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Product>>({
-    id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, stockQuantity: 0
+    id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, stockQuantity: 0, badge: "", tagline: "", rating: 5, reviews: 0
   });
   const [uploadingImg, setUploadingImg] = useState(false);
 
@@ -47,7 +51,7 @@ export default function AdminProducts() {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, features: [], specs: {} });
+    setFormData({ id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, features: [], specs: {}, badge: "", tagline: "", rating: 5, reviews: 0, stockQuantity: 0 });
     setIsModalOpen(true);
   };
 
@@ -184,79 +188,127 @@ export default function AdminProducts() {
             </div>
             
             <form onSubmit={handleSubmit} className={styles.modalForm}>
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label>Product ID (slug)</label>
-                  <input required disabled={!!editingId} value={formData.id} onChange={e => setFormData({...formData, id: e.target.value})} placeholder="e.g. reddix-x2" />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Product Name</label>
-                  <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Price (USD)</label>
-                  <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Category</label>
-                  <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-                    <option value="Drones">Drones</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Services">Services</option>
-                  </select>
-                </div>
-              </div>
-              <div className={styles.formGroup}>
-                  <label>Product Image</label>
-                  <div className={styles.imageUploadGroup}>
-                    {formData.image ? (
-                      <>
-                        <img src={formData.image} alt="Preview" className={styles.imagePreview} />
-                        <button type="button" className={styles.iconBtn} onClick={removeImage} title="Remove Image">
-                          <ImageOff size={18} color="#ef4444" />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <div className={styles.imagePreview} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <ImageOff size={20} color="var(--text-secondary)" />
-                        </div>
-                        <label className={styles.uploadBtn}>
-                          <Upload size={16} />
-                          {uploadingImg ? "Uploading..." : "Upload Image"}
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            style={{ display: "none" }} 
-                            onChange={handleImageUpload}
-                            disabled={uploadingImg}
-                          />
-                        </label>
-                      </>
-                    )}
+              <div className={styles.modalBody}>
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label>Product ID (slug)</label>
+                    <input required disabled={!!editingId} value={formData.id || ""} onChange={e => setFormData({...formData, id: e.target.value})} placeholder="e.g. reddix-x2" />
                   </div>
-              </div>
-              <div className={styles.formGroup}>
-                  <label>Description</label>
-                  <textarea rows={3} value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
-              </div>
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label>Stock Quantity</label>
-                  <input 
-                    type="number" 
-                    value={formData.stockQuantity} 
-                    onChange={e => {
-                      const val = parseInt(e.target.value);
-                      setFormData({...formData, stockQuantity: val, inStock: val > 0})
-                    }} 
-                  />
+                  <div className={styles.formGroup}>
+                    <label>Product Name</label>
+                    <input required value={formData.name || ""} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Tagline</label>
+                    <input value={formData.tagline || ""} onChange={e => setFormData({...formData, tagline: e.target.value})} placeholder="e.g. See What Others Miss" />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Badge</label>
+                    <input value={formData.badge || ""} onChange={e => setFormData({...formData, badge: e.target.value})} placeholder="e.g. ENTERPRISE" />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Price (USD)</label>
+                    <input required type="number" value={formData.price || 0} onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Category</label>
+                    <select value={formData.category || "Drones"} onChange={e => setFormData({...formData, category: e.target.value})}>
+                      <option value="Drones">Drones</option>
+                      <option value="Enterprise">Enterprise</option>
+                      <option value="Accessories">Accessories</option>
+                      <option value="Services">Services</option>
+                    </select>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Rating (1-5)</label>
+                    <input type="number" step="0.1" value={formData.rating || 5} onChange={e => setFormData({...formData, rating: Number(e.target.value)})} />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Review Count</label>
+                    <input type="number" value={formData.reviews || 0} onChange={e => setFormData({...formData, reviews: Number(e.target.value)})} />
+                  </div>
                 </div>
-                
-                <div className={styles.formGroupCheckbox} style={{ marginTop: '24px' }}>
-                    <input type="checkbox" id="inStock" checked={formData.inStock} onChange={e => setFormData({...formData, inStock: e.target.checked})} />
-                    <label htmlFor="inStock">Visible in Storefront</label>
+                <div className={styles.formGroup}>
+                    <label>Product Image</label>
+                    <div className={styles.imageUploadGroup}>
+                      {formData.image ? (
+                        <>
+                          <img src={formData.image} alt="Preview" className={styles.imagePreview} />
+                          <button type="button" className={styles.iconBtn} onClick={removeImage} title="Remove Image">
+                            <ImageOff size={18} color="#ef4444" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <div className={styles.imagePreview} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <ImageOff size={20} color="var(--text-secondary)" />
+                          </div>
+                          <label className={styles.uploadBtn}>
+                            <Upload size={16} />
+                            {uploadingImg ? "Uploading..." : "Upload Image"}
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              style={{ display: "none" }} 
+                              onChange={handleImageUpload}
+                              disabled={uploadingImg}
+                            />
+                          </label>
+                        </>
+                      )}
+                    </div>
+                </div>
+                <div className={styles.formGroup}>
+                    <label>Description</label>
+                    <textarea rows={3} value={formData.description || ""} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
+                </div>
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label>Features (One per line)</label>
+                    <textarea 
+                      rows={4} 
+                      value={formData.features?.join("\n") || ""} 
+                      onChange={e => setFormData({...formData, features: e.target.value.split("\n").filter(f => f.trim())})} 
+                      placeholder="Dual Thermal + RGB Sensor&#10;FLIR Boson 640x512..."></textarea>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Specs (Key: Value per line)</label>
+                    <textarea 
+                      rows={4} 
+                      value={Object.entries(formData.specs || {}).map(([k, v]) => `${k}: ${v}`).join("\n")} 
+                      onChange={e => {
+                        const lines = e.target.value.split("\n");
+                        const newSpecs: Record<string, string> = {};
+                        lines.forEach(line => {
+                          const parts = line.split(":");
+                          if (parts.length >= 2) {
+                            const k = parts[0].trim();
+                            const v = parts.slice(1).join(":").trim();
+                            if (k) newSpecs[k] = v;
+                          }
+                        });
+                        setFormData({...formData, specs: newSpecs});
+                      }} 
+                      placeholder="WEIGHT: 1.2kg&#10;BATTERY: 8000 mAh..."></textarea>
+                  </div>
+                </div>
+                <div className={styles.formGrid}>
+                  <div className={styles.formGroup}>
+                    <label>Stock Quantity</label>
+                    <input 
+                      type="number" 
+                      value={formData.stockQuantity} 
+                      onChange={e => {
+                        const val = parseInt(e.target.value);
+                        setFormData({...formData, stockQuantity: val, inStock: val > 0})
+                      }} 
+                    />
+                  </div>
+                  
+                  <div className={styles.formGroupCheckbox} style={{ marginTop: '24px' }}>
+                      <input type="checkbox" id="inStock" checked={formData.inStock} onChange={e => setFormData({...formData, inStock: e.target.checked})} />
+                      <label htmlFor="inStock">Visible in Storefront</label>
+                  </div>
                 </div>
               </div>
 

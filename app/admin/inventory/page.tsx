@@ -126,7 +126,7 @@ export default function AdminInventory() {
               <tr key={product.id}>
                 <td>
                   <div className={styles.productInfo}>
-                    <img src={product.image} alt={product.name} className={styles.productImg} />
+                    <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImg} />
                     <div>
                       <div className={styles.productName}>{product.name}</div>
                       <div className={styles.productCategory}>{product.category}</div>

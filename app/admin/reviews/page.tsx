@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Star, Check, X, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Star, Check, X, Search, Loader2 } from "lucide-react";
 import styles from "./reviews.module.css";
 
 interface Review {
@@ -15,18 +15,39 @@ interface Review {
   status: "Pending" | "Approved" | "Rejected";
 }
 
-const mockReviews: Review[] = [
-  { id: "REV-001", productId: "DRN-001", productName: "Reddix X1 Pro", customerName: "Alice M.", rating: 5, text: "Amazing drone! The camera quality is unbelievable.", date: "2024-06-01", status: "Pending" },
-  { id: "REV-002", productId: "DRN-002", productName: "Reddix Air Lite", customerName: "Bob S.", rating: 4, text: "Good for the price, but battery life could be better.", date: "2024-06-02", status: "Approved" },
-  { id: "REV-003", productId: "DRN-001", productName: "Reddix X1 Pro", customerName: "Charlie D.", rating: 1, text: "Box arrived damaged and the drone wouldn't connect to my phone. Sending it back.", date: "2024-06-03", status: "Rejected" },
-  { id: "REV-004", productId: "ACC-001", productName: "Pro Battery Pack", customerName: "Diana W.", rating: 5, text: "Essential for long shoots.", date: "2024-06-04", status: "Pending" }
-];
+const mockReviews: Review[] = [];
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<Review[]>(mockReviews);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleUpdateStatus = (id: string, newStatus: "Approved" | "Rejected") => {
-    setReviews(reviews.map(r => r.id === id ? { ...r, status: newStatus } : r));
+  const fetchReviews = async () => {
+    try {
+      const res = await fetch("/api/reviews");
+      const data = await res.json();
+      setReviews(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const handleUpdateStatus = async (id: string, newStatus: "Approved" | "Rejected") => {
+    try {
+      await fetch(`/api/reviews/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus })
+      });
+      fetchReviews(); // Refresh
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   return (
@@ -51,7 +72,11 @@ export default function ReviewsPage() {
             </tr>
           </thead>
           <tbody>
-            {reviews.map(review => (
+            {loading ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem" }}>Loading reviews...</td></tr>
+            ) : reviews.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "2rem" }}>No reviews found.</td></tr>
+            ) : reviews.map(review => (
               <tr key={review.id}>
                 <td>
                   <div className={styles.productName}>{review.productName}</div>

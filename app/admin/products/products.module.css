@@ -216,11 +216,14 @@
 .modal {
   background-color: var(--background-secondary);
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
 }
 
 [data-theme='light'] .modal {
@@ -254,7 +257,15 @@
 }
 
 .modalForm {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.modalBody {
   padding: 24px;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -355,10 +366,16 @@
 }
 
 .modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 10px;
+  background: var(--background-secondary);
+}
+
+[data-theme='light'] .modalFooter {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .cancelBtn {

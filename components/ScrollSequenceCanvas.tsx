@@ -55,21 +55,32 @@ export default function ScrollSequenceCanvas() {
   // Preload images
   useEffect(() => {
     const loadedImages: HTMLImageElement[] = [];
-    let loadedCount = 0;
-
+    
+    // First, initialize the array with empty images so the scroll handler doesn't crash
     for (let i = 1; i <= FRAME_COUNT; i++) {
-      const img = new Image();
-      img.src = currentFrame(i);
-      img.onload = () => {
-        loadedCount++;
-        if (loadedCount === FRAME_COUNT) {
-          // All loaded
-        }
-      };
-      loadedImages.push(img);
+      loadedImages.push(new Image());
     }
     
+    // Preload first 5 frames immediately for instant feedback
+    for (let i = 1; i <= 5; i++) {
+      loadedImages[i-1].src = currentFrame(i);
+    }
     setImages(loadedImages);
+
+    // Lazily load the rest of the 235 frames after a short delay (e.g. 500ms) 
+    // to allow the browser to prioritize other critical assets (fonts, css, nextjs hydration).
+    const preloadTimer = setTimeout(() => {
+      for (let i = 6; i <= FRAME_COUNT; i++) {
+        // Use requestIdleCallback if available, otherwise just set src
+        if ('requestIdleCallback' in window) {
+          (window as any).requestIdleCallback(() => {
+            loadedImages[i-1].src = currentFrame(i);
+          });
+        } else {
+          loadedImages[i-1].src = currentFrame(i);
+        }
+      }
+    }, 500);
 
     // Initial draw for frame 1
     const img = new Image();

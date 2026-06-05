@@ -28,14 +28,8 @@ export async function middleware(request: NextRequest) {
       request,
     });
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    // If Supabase env vars are missing (e.g. fresh Vercel deploy), skip auth checks to prevent crashing the site
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn("Middleware: Missing Supabase environment variables.");
-      return supabaseResponse;
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zldibrhzuxhwecetctxb.supabase.co';
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_wLCZbYBRYw0Pw0htUUZ01Q_Qc-D8VNX';
 
     const supabase = createServerClient(
       supabaseUrl,

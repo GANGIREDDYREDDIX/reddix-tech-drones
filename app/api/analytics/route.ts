@@ -1,22 +1,36 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'orders.json');
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
   try {
-    const fileData = fs.readFileSync(dbPath, 'utf8');
-    const db = JSON.parse(fileData);
+    const supabase = await createClient();
     
+    // Fetch all orders
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .order('date', { ascending: true }); // Ascending for chart chronological order
+
+    if (ordersError) throw ordersError;
+
+    // Fetch low stock products
+    const { data: lowStockProducts, error: productsError } = await supabase
+      .from('products')
+      .select('name, "stockQuantity"')
+      .lt('stockQuantity', 5)
+      .order('stockQuantity', { ascending: true })
+      .limit(5);
+
+    if (productsError) throw productsError;
+
     let totalRevenue = 0;
-    let totalOrders = db.orders.length;
+    let totalOrders = orders.length;
     let activeOrders = 0;
 
     // Aggregate revenue by date for the chart
     const revenueByDate: Record<string, number> = {};
 
-    db.orders.forEach((order: any) => {
+    orders.forEach((order: any) => {
       // Calculate totals
       if (order.status !== 'Cancelled') {
         totalRevenue += order.total;
@@ -42,7 +56,19 @@ export async function GET() {
     const chartData = Object.keys(revenueByDate).map(date => ({
       name: date,
       revenue: revenueByDate[date]
-    })).reverse(); // Assuming orders are newest first in JSON, reverse to get chronological
+    }));
+
+    // Get 3 most recent orders for the dashboard list
+    // Re-sort descending just for this specific variable
+    const recentOrders = [...orders]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 3)
+      .map(o => ({
+        id: o.id,
+        customer: o.customer?.name || "Guest",
+        status: o.status,
+        amount: o.total
+      }));
 
     return NextResponse.json({
       kpis: {
@@ -50,9 +76,12 @@ export async function GET() {
         totalOrders,
         activeOrders
       },
-      chartData
+      chartData,
+      recentOrders,
+      lowStock: lowStockProducts.map(p => ({ name: p.name, qty: p.stockQuantity }))
     });
   } catch (error) {
+    console.error('Failed to read analytics:', error);
     return NextResponse.json({ error: 'Failed to read analytics' }, { status: 500 });
   }
 }

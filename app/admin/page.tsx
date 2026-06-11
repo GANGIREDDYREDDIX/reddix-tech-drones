@@ -114,11 +114,7 @@ export default function AdminDashboard() {
           <div className={styles.activityCard}>
             <h2>Recent Orders</h2>
             <div className={styles.activityList}>
-              {[
-                { id: "ORD-001", customer: "John Doe", status: "Processing", amount: 2499 },
-                { id: "ORD-002", customer: "Tech Corp", status: "Shipped", amount: 5499 },
-                { id: "ORD-003", customer: "Sarah Smith", status: "Delivered", amount: 449 },
-              ].map((order, i) => (
+              {analytics?.recentOrders?.map((order: any, i: number) => (
                 <div key={i} className={styles.activityItem}>
                   <div className={styles.activityInfo}>
                     <span className={styles.orderId}>{order.id}</span>
@@ -132,6 +128,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ))}
+              {(!analytics || !analytics.recentOrders || analytics.recentOrders.length === 0) && (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>No recent orders</div>
+              )}
             </div>
           </div>
           
@@ -140,11 +139,8 @@ export default function AdminDashboard() {
               <Package size={18} /> Low Stock Alerts
             </h2>
             <div className={styles.activityList}>
-              {[
-                { name: "Pro Battery Combo Pack", qty: 2 },
-                { name: "Custom 3D Print Service", qty: 0 },
-              ].map((item, i) => (
-                <div key={i} className={styles.activityItem} style={{ padding: "12px 0", borderBottom: i === 1 ? "none" : "" }}>
+              {analytics?.lowStock?.map((item: any, i: number) => (
+                <div key={i} className={styles.activityItem} style={{ padding: "12px 0", borderBottom: i === analytics.lowStock.length - 1 ? "none" : "" }}>
                   <div className={styles.activityInfo}>
                     <span className={styles.orderCustomer}>{item.name}</span>
                   </div>
@@ -155,6 +151,9 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ))}
+              {(!analytics || !analytics.lowStock || analytics.lowStock.length === 0) && (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>Inventory looking good!</div>
+              )}
             </div>
           </div>
         </div>

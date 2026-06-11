@@ -47,13 +47,32 @@ export default function AccountSettings() {
       let referralCode = "";
       
       try {
-        const { data: customer } = await supabase
+        const { data: customer, error } = await supabase
           .from('customers')
           .select('points_issued, points_redeemed, referral_code')
           .eq('email', email)
           .single();
           
-        if (customer) {
+        if (error || !customer) {
+          // If customer doesn't exist in our public.customers table, create them now
+          const generatedRefCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+          const newCustomerId = `CUST-${Math.floor(Math.random() * 100000)}`;
+          
+          const { data: newCustomer } = await supabase.from('customers').insert({
+            id: newCustomerId,
+            name: name,
+            email: email,
+            referral_code: generatedRefCode,
+            points_issued: 0,
+            points_redeemed: 0,
+            status: 'Active'
+          }).select().single();
+          
+          if (newCustomer) {
+            points = 0;
+            referralCode = newCustomer.referral_code;
+          }
+        } else if (customer) {
           points = (customer.points_issued || 0) - (customer.points_redeemed || 0);
           referralCode = customer.referral_code || "";
         }

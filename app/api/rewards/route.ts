@@ -10,12 +10,24 @@ export async function GET() {
       .eq('id', 'default')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Return default values if row doesn't exist
+        return NextResponse.json({
+          id: 'default',
+          purchases_multiplier: 1,
+          review_points: 50,
+          referral_points: 500
+        });
+      }
+      console.error("Supabase Error Details:", error);
+      throw error;
+    }
     
     return NextResponse.json(config);
   } catch (error) {
     console.error('Failed to read rewards config:', error);
-    return NextResponse.json({ error: 'Failed to read rewards config' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to read rewards config', details: error }, { status: 500 });
   }
 }
 
@@ -26,16 +38,19 @@ export async function PUT(request: Request) {
     
     const { data, error } = await supabase
       .from('rewards_config')
-      .update({
+      .upsert({
+        id: 'default',
         purchases_multiplier: updates.purchases_multiplier,
         review_points: updates.review_points,
         referral_points: updates.referral_points
       })
-      .eq('id', 'default')
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase Error Details:", error);
+      throw error;
+    }
     return NextResponse.json(data);
   } catch (error) {
     console.error('Failed to update rewards config:', error);

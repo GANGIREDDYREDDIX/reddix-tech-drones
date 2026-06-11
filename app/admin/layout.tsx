@@ -6,6 +6,8 @@ import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, Bell, 
 import styles from "./admin.module.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCurrency } from "@/context/CurrencyContext";
+import GlobalSearch from "@/components/GlobalSearch";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 
 import { createClient } from '@/utils/supabase/client';
 
@@ -108,12 +110,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <option value="CAD">CAD (C$)</option>
               </select>
             )}
-            <button className={styles.actionBtn}>
-              <Search size={18} />
-            </button>
-            <button className={styles.actionBtn}>
-              <Bell size={18} />
-            </button>
+            <GlobalSearch />
+            <NotificationsDropdown />
             <ThemeToggle />
             <div className={styles.userProfile}>
               <div className={styles.avatar}>A</div>

@@ -23,6 +23,8 @@ export default function AccountSettings() {
   const [profile, setProfile] = useState({
     name: "",
     email: "",
+    points: 0,
+    referralCode: "",
   });
   const [products, setProducts] = useState<any[]>([]);
   const { addToCart } = useCart();
@@ -41,7 +43,25 @@ export default function AccountSettings() {
       const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || "User";
       const email = user.email || user.phone || "";
       
-      setProfile({ name, email });
+      let points = 0;
+      let referralCode = "";
+      
+      try {
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('points_issued, points_redeemed, referral_code')
+          .eq('email', email)
+          .single();
+          
+        if (customer) {
+          points = (customer.points_issued || 0) - (customer.points_redeemed || 0);
+          referralCode = customer.referral_code || "";
+        }
+      } catch (e) {
+        console.error("Error fetching customer data:", e);
+      }
+      
+      setProfile({ name, email, points, referralCode });
 
       // Load products for "You may also like"
       try {
@@ -328,9 +348,20 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <div style={{ textAlign: 'center', padding: '20px 0 40px' }}>
         <Coins size={64} color="#f59e0b" style={{ marginBottom: '16px' }} />
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>2,450</h2>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{profile.points.toLocaleString()}</h2>
         <p style={{ color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Available Reddix Points</p>
       </div>
+
+      {profile.referralCode && (
+        <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '24px', borderRadius: '12px', border: '1px dashed #f59e0b', marginBottom: '24px', textAlign: 'center' }}>
+          <h3 style={{ fontSize: '1rem', color: '#f59e0b', marginBottom: '8px' }}>Your Unique Referral Code</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>Share this code with friends. When they register using it, you both get rewarded!</p>
+          <div style={{ display: 'inline-block', background: 'var(--background-primary)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '3px', userSelect: 'all' }}>
+            {profile.referralCode}
+          </div>
+        </div>
+      )}
+
       <div style={{ background: 'var(--background-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--nav-border)' }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '16px' }}>How to earn more?</h3>
         <ul style={{ color: 'var(--text-secondary)', paddingLeft: '20px', lineHeight: 1.8 }}>

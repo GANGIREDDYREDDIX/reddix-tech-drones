@@ -7,6 +7,7 @@ import styles from "./orders.module.css";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface Order {
   id: string;
@@ -32,6 +33,7 @@ export default function MyOrders() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { formatCurrency, loading: currencyLoading } = useCurrency();
 
   useEffect(() => {
     async function loadData() {
@@ -54,16 +56,6 @@ export default function MyOrders() {
         if (ordersRes.ok) {
           const data = await ordersRes.json();
           let userOrders = data.filter((o: Order) => o.customer.email === user.email);
-          
-          if (userOrders.length === 0) {
-            // Demo fallback
-            const mockOrder = { ...data[0] };
-            if (mockOrder) {
-              mockOrder.customer.name = user.user_metadata?.full_name || "Valued Customer";
-              mockOrder.customer.email = user.email || "";
-              userOrders = [mockOrder];
-            }
-          }
 
           // Map product images to order items
           const enrichedOrders = userOrders.map((order: Order) => ({
@@ -143,7 +135,7 @@ export default function MyOrders() {
                     </div>
                     <div className={styles.headerItem}>
                       <span className={styles.label}>Total</span>
-                      <span className={styles.value}>${order.total.toFixed(2)}</span>
+                      <span className={styles.value}>{!currencyLoading ? formatCurrency(order.total) : "..."}</span>
                     </div>
                     <div className={styles.headerItem}>
                       <span className={styles.label}>Ship To</span>
@@ -184,7 +176,8 @@ export default function MyOrders() {
                       </div>
                       <div className={styles.itemDetails}>
                         <h4 className={styles.itemName}>{item.name}</h4>
-                        <p className={styles.itemMeta}>Qty: {item.quantity} • ${(item.price).toFixed(2)} each</p>
+                        <p className={styles.itemPrice}>{!currencyLoading ? formatCurrency(item.price) : "..."}</p>
+                        <p className={styles.itemMeta}>Qty: {item.quantity}</p>
                         <div className={styles.itemActions}>
                           <button className={styles.actionBtn}><Package size={14} /> Track Package</button>
                           <button className={styles.actionBtn}><ExternalLink size={14} /> Buy it again</button>

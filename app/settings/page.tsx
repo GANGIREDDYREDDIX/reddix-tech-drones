@@ -34,6 +34,8 @@ export default function AccountSettings() {
   const [products, setProducts] = useState<any[]>([]);
   const { addToCart } = useCart();
   const { currency, setCurrency, formatCurrency } = useCurrency();
+  const [supportForm, setSupportForm] = useState({ subject: 'General Inquiry', message: '' });
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -343,23 +345,65 @@ export default function AccountSettings() {
     </motion.div>
   );
 
+  const handleSupportSubmit = async () => {
+    if (!supportForm.message.trim()) {
+      alert("Please enter a message.");
+      return;
+    }
+    
+    setIsSubmittingTicket(true);
+    try {
+      const res = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(supportForm)
+      });
+      if (res.ok) {
+        alert("Support ticket submitted successfully! We will get back to you soon.");
+        setSupportForm({ subject: 'General Inquiry', message: '' });
+      } else {
+        alert("Failed to submit ticket.");
+      }
+    } catch(e) {
+      alert("Error submitting ticket.");
+    } finally {
+      setIsSubmittingTicket(false);
+    }
+  };
+
   const renderSupport = () => (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <h2 className={styles.tabTitle}>Support Center</h2>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>How can we help you?</label>
-        <select className={styles.selectInput} defaultValue="general">
-          <option value="general">General Inquiry</option>
-          <option value="order">Order Tracking / Status</option>
-          <option value="returns">Returns & Refunds</option>
-          <option value="tech">Technical Support</option>
+        <select 
+          className={styles.selectInput} 
+          value={supportForm.subject}
+          onChange={(e) => setSupportForm({...supportForm, subject: e.target.value})}
+        >
+          <option value="General Inquiry">General Inquiry</option>
+          <option value="Order Tracking / Status">Order Tracking / Status</option>
+          <option value="Returns & Refunds">Returns & Refunds</option>
+          <option value="Technical Support">Technical Support</option>
         </select>
       </div>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Message</label>
-        <textarea className={styles.input} rows={5} placeholder="Describe your issue..."></textarea>
+        <textarea 
+          className={styles.input} 
+          rows={5} 
+          placeholder="Describe your issue..."
+          value={supportForm.message}
+          onChange={(e) => setSupportForm({...supportForm, message: e.target.value})}
+        ></textarea>
       </div>
-      <button className={styles.saveBtn}>Submit Ticket</button>
+      <button 
+        className={styles.saveBtn} 
+        onClick={handleSupportSubmit}
+        disabled={isSubmittingTicket}
+      >
+        {isSubmittingTicket ? "Submitting..." : "Submit Ticket"}
+      </button>
     </motion.div>
   );
 

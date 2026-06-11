@@ -6,10 +6,36 @@ import styles from "./CartSidebar.module.css";
 import clsx from "clsx";
 import Link from "next/link";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useState } from "react";
 
 export default function CartSidebar() {
-  const { isCartOpen, setIsCartOpen, items, updateQuantity, removeFromCart, cartTotal } = useCart();
+  const { isCartOpen, setIsCartOpen, items, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
   const { formatCurrency, loading: currencyLoading } = useCurrency();
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+
+  const handleCheckout = async () => {
+    setIsCheckingOut(true);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items, total: cartTotal })
+      });
+      
+      if (res.ok) {
+        alert("Order placed successfully! A Reddix Tech representative will contact you shortly.");
+        clearCart();
+        setIsCartOpen(false);
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to place order.");
+      }
+    } catch (e) {
+      alert("Error placing order. Please try again.");
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   return (
     <>
@@ -88,12 +114,10 @@ export default function CartSidebar() {
             
             <button 
               className={styles.checkoutBtn}
-              onClick={() => {
-                alert("Thank you for your interest! A Reddix Tech representative will contact you shortly.");
-                setIsCartOpen(false);
-              }}
+              onClick={handleCheckout}
+              disabled={isCheckingOut}
             >
-              Request Quote
+              {isCheckingOut ? "Processing..." : "Place Order"}
             </button>
           </div>
         )}

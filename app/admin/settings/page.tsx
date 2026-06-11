@@ -2,22 +2,68 @@
 
 import { Save } from "lucide-react";
 import styles from "./settings.module.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface StoreSettings {
+  store_name: string;
+  support_email: string;
+  maintenance_mode: boolean;
+  new_order_alerts: boolean;
+  domestic_shipping: string;
+  intl_shipping: string;
+  default_tax: string;
+}
 
 export default function AdminSettings() {
   const [activeTab, setActiveTab] = useState("General");
-  const [storeName, setStoreName] = useState("Reddix Tech Enterprises");
-  const [supportEmail, setSupportEmail] = useState("support@reddix.tech");
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [newOrderAlerts, setNewOrderAlerts] = useState(true);
+  const [settings, setSettings] = useState<StoreSettings>({
+    store_name: "",
+    support_email: "",
+    maintenance_mode: false,
+    new_order_alerts: false,
+    domestic_shipping: "",
+    intl_shipping: "",
+    default_tax: ""
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const [domesticShipping, setDomesticShipping] = useState("500");
-  const [intlShipping, setIntlShipping] = useState("2500");
-  const [defaultTax, setDefaultTax] = useState("18");
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) {
+          setSettings(data);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Settings saved successfully!");
+    setSaving(true);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings)
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      alert("Settings saved successfully!");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to save settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (key: keyof StoreSettings, value: string | boolean) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -35,7 +81,9 @@ export default function AdminSettings() {
 
       <form className={styles.settingsCard} onSubmit={handleSave}>
         
-        {activeTab === "General" && (
+        {loading ? (
+          <div style={{ padding: '24px', textAlign: 'center' }}>Loading settings...</div>
+        ) : activeTab === "General" ? (
           <>
             <div>
               <h2 className={styles.sectionTitle}>Store Details</h2>
@@ -45,8 +93,8 @@ export default function AdminSettings() {
                   <input 
                     type="text" 
                     className={styles.input} 
-                    value={storeName} 
-                    onChange={(e) => setStoreName(e.target.value)}
+                    value={settings.store_name} 
+                    onChange={(e) => handleChange('store_name', e.target.value)}
                   />
                 </div>
                 
@@ -55,8 +103,8 @@ export default function AdminSettings() {
                   <input 
                     type="email" 
                     className={styles.input} 
-                    value={supportEmail}
-                    onChange={(e) => setSupportEmail(e.target.value)}
+                    value={settings.support_email}
+                    onChange={(e) => handleChange('support_email', e.target.value)}
                   />
                 </div>
               </div>
@@ -73,8 +121,8 @@ export default function AdminSettings() {
                 <label className={styles.switch}>
                   <input 
                     type="checkbox" 
-                    checked={maintenanceMode}
-                    onChange={(e) => setMaintenanceMode(e.target.checked)}
+                    checked={settings.maintenance_mode}
+                    onChange={(e) => handleChange('maintenance_mode', e.target.checked)}
                   />
                   <span className={styles.slider}></span>
                 </label>
@@ -88,69 +136,65 @@ export default function AdminSettings() {
                 <label className={styles.switch}>
                   <input 
                     type="checkbox" 
-                    checked={newOrderAlerts}
-                    onChange={(e) => setNewOrderAlerts(e.target.checked)}
+                    checked={settings.new_order_alerts}
+                    onChange={(e) => handleChange('new_order_alerts', e.target.checked)}
                   />
                   <span className={styles.slider}></span>
                 </label>
               </div>
             </div>
           </>
-        )}
-
-        {activeTab === "Shipping" && (
+        ) : activeTab === "Shipping" ? (
           <div>
-            <h2 className={styles.sectionTitle}>Shipping Rates</h2>
+            <h2 className={styles.sectionTitle}>Shipping Configuration</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div className={styles.formGroup}>
-                <label>Domestic Shipping</label>
+                <label>Domestic Shipping Flat Rate (₹)</label>
                 <input 
                   type="number" 
                   className={styles.input} 
-                  value={domesticShipping} 
-                  onChange={(e) => setDomesticShipping(e.target.value)}
+                  value={settings.domestic_shipping} 
+                  onChange={(e) => handleChange('domestic_shipping', e.target.value)}
                 />
               </div>
+              
               <div className={styles.formGroup}>
-                <label>International Shipping</label>
+                <label>International Shipping Flat Rate (₹)</label>
                 <input 
                   type="number" 
                   className={styles.input} 
-                  value={intlShipping} 
-                  onChange={(e) => setIntlShipping(e.target.value)}
+                  value={settings.intl_shipping}
+                  onChange={(e) => handleChange('intl_shipping', e.target.value)}
                 />
               </div>
             </div>
           </div>
-        )}
-
-        {activeTab === "Taxes" && (
+        ) : activeTab === "Taxes" ? (
           <div>
             <h2 className={styles.sectionTitle}>Tax Configuration</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div className={styles.formGroup}>
-                <label>Default Tax Rate (%)</label>
+                <label>Default GST Rate (%)</label>
                 <input 
                   type="number" 
                   className={styles.input} 
-                  value={defaultTax} 
-                  onChange={(e) => setDefaultTax(e.target.value)}
+                  value={settings.default_tax} 
+                  onChange={(e) => handleChange('default_tax', e.target.value)}
                 />
               </div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                This tax rate will be automatically applied at checkout based on the customer's shipping address.
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                This tax rate will be applied to all products unless overridden at the product level.
               </p>
             </div>
           </div>
-        )}
+        ) : null}
 
-        <button type="submit" className={styles.saveBtn}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={styles.actions}>
+          <button type="submit" className={styles.saveBtn} disabled={saving || loading}>
             <Save size={18} />
-            Save Changes
-          </div>
-        </button>
-        
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
       </form>
     </div>
   );

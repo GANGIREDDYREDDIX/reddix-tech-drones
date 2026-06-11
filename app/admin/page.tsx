@@ -7,7 +7,7 @@ import styles from "./dashboard.module.css";
 import { useCurrency } from "@/context/CurrencyContext";
 
 export default function AdminDashboard() {
-  const [analytics, setAnalytics] = useState<{ kpis: any, chartData: any[] } | null>(null);
+  const [analytics, setAnalytics] = useState<{ kpis: any, chartData: any[], recentOrders?: any[], lowStock?: any[] } | null>(null);
   const { formatCurrency, loading } = useCurrency();
 
   useEffect(() => {
@@ -139,8 +139,8 @@ export default function AdminDashboard() {
               <Package size={18} /> Low Stock Alerts
             </h2>
             <div className={styles.activityList}>
-              {analytics?.lowStock?.map((item: any, i: number) => (
-                <div key={i} className={styles.activityItem} style={{ padding: "12px 0", borderBottom: i === analytics.lowStock.length - 1 ? "none" : "" }}>
+              {analytics?.lowStock?.map((item: any, i: number, arr: any[]) => (
+                <div key={i} className={styles.activityItem} style={{ padding: "12px 0", borderBottom: i === arr.length - 1 ? "none" : "" }}>
                   <div className={styles.activityInfo}>
                     <span className={styles.orderCustomer}>{item.name}</span>
                   </div>

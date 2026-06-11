@@ -18,7 +18,7 @@ interface Cart {
 export default function AbandonedCartsPage() {
   const [carts, setCarts] = useState<Cart[]>([]);
   const [loading, setLoading] = useState(true);
-  const { formatCurrency, loading: currencyLoading } = useCurrency();
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     fetch("/api/abandoned-carts")
@@ -73,7 +73,7 @@ export default function AbandonedCartsPage() {
                 </td>
                 <td>{cart.time_abandoned}</td>
                 <td>{cart.items_count} items</td>
-                <td className={styles.textRight}>{!currencyLoading ? formatCurrency(cart.value) : "..."}</td>
+                <td className={styles.textRight}>{formatCurrency(cart.value)}</td>
                 <td>
                   <span className={`${styles.statusBadge} ${
                     cart.status === "Recovered" ? styles.badgeRecovered :

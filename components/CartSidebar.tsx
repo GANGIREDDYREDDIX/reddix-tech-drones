@@ -10,7 +10,7 @@ import { useState } from "react";
 
 export default function CartSidebar() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
-  const { formatCurrency, loading: currencyLoading } = useCurrency();
+  const { formatCurrency } = useCurrency();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const handleCheckout = async () => {
@@ -65,7 +65,7 @@ export default function CartSidebar() {
                 <img src={item.image} alt={item.name} className={styles.itemImage} />
                 <div className={styles.itemDetails}>
                   <h4 className={styles.itemName}>{item.name}</h4>
-                  <div className={styles.itemPrice}>{!currencyLoading ? formatCurrency(item.price) : "..."}</div>
+                  <div className={styles.itemPrice}>{formatCurrency(item.price)}</div>
                   
                   <div className={styles.itemControls}>
                     <div className={styles.quantityControl}>
@@ -101,15 +101,11 @@ export default function CartSidebar() {
           <div className={styles.footer}>
             <div className={styles.summaryRow}>
               <span>Subtotal</span>
-              <span>{!currencyLoading ? formatCurrency(cartTotal) : "..."}</span>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>Shipping</span>
-              <span>Calculated at checkout</span>
+              <span>{formatCurrency(cartTotal)}</span>
             </div>
             <div className={styles.summaryTotal}>
               <span>Total</span>
-              <span>{!currencyLoading ? formatCurrency(cartTotal) : "..."}</span>
+              <span>{formatCurrency(cartTotal)}</span>
             </div>
             
             <button 

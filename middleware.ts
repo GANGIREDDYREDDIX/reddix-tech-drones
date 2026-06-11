@@ -11,7 +11,17 @@ export async function middleware(request: NextRequest) {
     const ip = request.headers.get('x-forwarded-for') || '127.0.0.1';
     const now = Date.now();
     const windowStart = now - WINDOW_MS;
-    
+    // Cleanup map periodically to prevent memory leaks
+    if (rateLimitMap.size > 10000) {
+      rateLimitMap.clear();
+    } else if (Math.random() < 0.01) { // 1% chance to run cleanup
+      for (const [key, data] of rateLimitMap.entries()) {
+        if (data.lastReset < windowStart) {
+          rateLimitMap.delete(key);
+        }
+      }
+    }
+
     let rateData = rateLimitMap.get(ip);
     if (!rateData || rateData.lastReset < windowStart) {
       rateData = { count: 0, lastReset: now };

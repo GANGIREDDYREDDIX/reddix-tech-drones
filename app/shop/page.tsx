@@ -21,7 +21,7 @@ export default function Shop() {
   const [addedId, setAddedId] = useState<string | null>(null);
   const [dbProducts, setDbProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { formatCurrency, loading: currencyLoading } = useCurrency();
+  const { formatCurrency } = useCurrency();
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, customerName: "", text: "" });
@@ -155,7 +155,7 @@ export default function Shop() {
         <section className={styles.trustBadges}>
           <div className={styles.trustItem}>
             <Truck size={20} />
-            <span>Free Shipping over {!currencyLoading ? formatCurrency(120) : "..."}</span>
+            <span>Free Shipping over {formatCurrency(120)}</span>
           </div>
           <div className={styles.trustItem}>
             <Shield size={20} />
@@ -300,9 +300,9 @@ export default function Shop() {
                     {/* Price + CTA */}
                     <div className={styles.cardFooter}>
                       <div className={styles.priceBlock}>
-                        <span className={styles.price}>{!currencyLoading ? formatCurrency(product.price) : "..."}</span>
+                        <span className={styles.price}>{formatCurrency(product.price)}</span>
                         {product.originalPrice && (
-                          <span className={styles.originalPrice}>{!currencyLoading ? formatCurrency(product.originalPrice) : "..."}</span>
+                          <span className={styles.originalPrice}>{formatCurrency(product.originalPrice)}</span>
                         )}
                       </div>
 

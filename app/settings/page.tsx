@@ -64,32 +64,44 @@ export default function AccountSettings() {
       let referralCode = "";
       
       try {
-        const { data: customer, error } = await supabase
+        // Use limit(1) + order to always get the most recently updated customer row
+        // This prevents .single() from crashing on duplicate rows
+        const { data: customers, error } = await supabase
           .from('customers')
-          .select('points_issued, points_redeemed, referral_code, phone, currency, language, email_orders, email_offers')
+          .select('id, points_issued, points_redeemed, referral_code, phone, currency, language, email_orders, email_offers')
           .eq('email', email)
-          .single();
+          .order('joined_date', { ascending: false })
+          .limit(1);
+
+        const customer = customers && customers.length > 0 ? customers[0] : null;
           
         if (error || !customer) {
-          // If customer doesn't exist in our public.customers table, create them now
-          const generatedRefCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-          const newCustomerId = `CUST-${Math.floor(Math.random() * 100000)}`;
-          
-          const { data: newCustomer } = await supabase.from('customers').insert({
-            id: newCustomerId,
-            name: name,
-            email: email,
-            referral_code: generatedRefCode,
-            points_issued: 0,
-            points_redeemed: 0,
-            status: 'Active'
-          }).select().single();
-          
-          if (newCustomer) {
-            points = 0;
-            referralCode = newCustomer.referral_code;
+          // Only create a new row if truly no customer exists yet
+          const { count } = await supabase
+            .from('customers')
+            .select('id', { count: 'exact', head: true })
+            .eq('email', email);
+
+          if (!count || count === 0) {
+            const generatedRefCode = `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+            const newCustomerId = `CUST-${Math.floor(Math.random() * 100000)}`;
+            
+            const { data: newCustomer } = await supabase.from('customers').insert({
+              id: newCustomerId,
+              name: name,
+              email: email,
+              referral_code: generatedRefCode,
+              points_issued: 0,
+              points_redeemed: 0,
+              status: 'Active'
+            }).select().maybeSingle();
+            
+            if (newCustomer) {
+              points = 0;
+              referralCode = newCustomer.referral_code;
+            }
           }
-        } else if (customer) {
+        } else {
           points = (customer.points_issued || 0) - (customer.points_redeemed || 0);
           referralCode = customer.referral_code || "";
           setProfile(p => ({

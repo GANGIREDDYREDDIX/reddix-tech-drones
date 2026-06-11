@@ -116,7 +116,7 @@ export default function Shop() {
         })
       });
       setReviewModalOpen(false);
-      alert("Review submitted successfully! It will appear once approved by a moderator.");
+      alert("Review submitted successfully");
     } catch (e) {
       console.error(e);
       alert("Failed to submit review.");

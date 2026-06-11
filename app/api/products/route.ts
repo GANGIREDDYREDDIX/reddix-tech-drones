@@ -1,47 +1,53 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'db.json');
-
-function readDb() {
-  const fileData = fs.readFileSync(dbPath, 'utf8');
-  return JSON.parse(fileData);
-}
-
-function writeDb(data: any) {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
-}
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
   try {
-    const db = readDb();
-    return NextResponse.json(db.products);
+    const supabase = await createClient();
+    const { data: products, error } = await supabase
+      .from('products')
+      .select('*');
+
+    if (error) throw error;
+    return NextResponse.json(products);
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to read database' }, { status: 500 });
+    console.error('Failed to read products:', error);
+    return NextResponse.json({ error: 'Failed to read products database' }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
     const newProduct = await request.json();
-    const db = readDb();
+    const supabase = await createClient();
     
-    // Ensure basic required fields exist
-    if (!newProduct.id || !newProduct.name || !newProduct.price) {
-       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
+    // Convert JS casing to DB schema (camelCase matches our DB schema based on SQL)
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        id: newProduct.id,
+        name: newProduct.name,
+        tagline: newProduct.tagline,
+        description: newProduct.description,
+        price: newProduct.price,
+        originalPrice: newProduct.originalPrice,
+        image: newProduct.image,
+        badge: newProduct.badge,
+        rating: newProduct.rating || 0,
+        reviewCount: newProduct.reviewCount || 0,
+        inStock: newProduct.inStock ?? true,
+        category: newProduct.category,
+        features: newProduct.features || [],
+        specs: newProduct.specs || {},
+        stockQuantity: newProduct.stockQuantity || 0
+      })
+      .select()
+      .single();
 
-    // Check if ID already exists
-    if (db.products.some((p: any) => p.id === newProduct.id)) {
-      return NextResponse.json({ error: 'Product ID already exists' }, { status: 409 });
-    }
-
-    db.products.push(newProduct);
-    writeDb(db);
-    
-    return NextResponse.json(newProduct, { status: 201 });
+    if (error) throw error;
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    console.error('Failed to add product:', error);
+    return NextResponse.json({ error: 'Failed to add product' }, { status: 500 });
   }
 }

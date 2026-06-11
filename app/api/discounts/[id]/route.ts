@@ -1,33 +1,48 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@/utils/supabase/server';
 
-const dbPath = path.join(process.cwd(), 'data', 'discounts.json');
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const { status } = await request.json();
+    const supabase = await createClient();
+    
+    const { data, error } = await supabase
+      .from('discounts')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
 
-function readDb() {
-  const fileData = fs.readFileSync(dbPath, 'utf8');
-  return JSON.parse(fileData);
-}
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Discount not found' }, { status: 404 });
+      }
+      throw error;
+    }
 
-function writeDb(data: any) {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Failed to update discount status:', error);
+    return NextResponse.json({ error: 'Failed to update discount status' }, { status: 500 });
+  }
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const db = readDb();
+    const supabase = await createClient();
     
-    const index = db.discounts.findIndex((d: any) => d.id === id);
-    if (index === -1) {
-      return NextResponse.json({ error: 'Discount not found' }, { status: 404 });
-    }
+    const { error } = await supabase
+      .from('discounts')
+      .delete()
+      .eq('id', id);
 
-    db.discounts.splice(index, 1);
-    writeDb(db);
-
-    return NextResponse.json({ success: true });
+    if (error) throw error;
+    
+    return NextResponse.json({ message: 'Discount deleted successfully' });
   } catch (error) {
+    console.error('Failed to delete discount:', error);
     return NextResponse.json({ error: 'Failed to delete discount' }, { status: 500 });
   }
 }

@@ -1,23 +1,17 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
-
-const dbPath = path.join(process.cwd(), 'data', 'discounts.json');
-
-function readDb() {
-  const fileData = fs.readFileSync(dbPath, 'utf8');
-  return JSON.parse(fileData);
-}
-
-function writeDb(data: any) {
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
-}
+import { createClient } from '@/utils/supabase/server';
 
 export async function GET() {
   try {
-    const db = readDb();
-    return NextResponse.json(db.discounts);
+    const supabase = await createClient();
+    const { data: discounts, error } = await supabase
+      .from('discounts')
+      .select('*');
+
+    if (error) throw error;
+    return NextResponse.json(discounts);
   } catch (error) {
+    console.error('Failed to read discounts:', error);
     return NextResponse.json({ error: 'Failed to read discounts' }, { status: 500 });
   }
 }
@@ -25,21 +19,29 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const newDiscount = await request.json();
-    const db = readDb();
+    const supabase = await createClient();
     
     // Add missing fields for a new discount
-    const discount = {
-      ...newDiscount,
-      id: `DISC-${Date.now()}`,
-      status: 'Active',
-      usageCount: 0
-    };
+    const id = `DISC-${Date.now()}`;
+    const { data, error } = await supabase
+      .from('discounts')
+      .insert({
+        id,
+        code: newDiscount.code,
+        type: newDiscount.type,
+        value: newDiscount.value,
+        status: 'Active',
+        usageCount: 0,
+        expiry: newDiscount.expiry || null
+      })
+      .select()
+      .single();
 
-    db.discounts.push(discount);
-    writeDb(db);
-
-    return NextResponse.json(discount, { status: 201 });
+    if (error) throw error;
+    
+    return NextResponse.json(data, { status: 201 });
   } catch (error) {
+    console.error('Failed to create discount:', error);
     return NextResponse.json({ error: 'Failed to create discount' }, { status: 500 });
   }
 }

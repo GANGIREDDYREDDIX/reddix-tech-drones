@@ -112,7 +112,7 @@ export default function RewardsAdmin() {
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'var(--background-secondary)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
                   <h4 style={{ color: 'var(--text-primary)', marginBottom: '4px' }}>Purchases</h4>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Points earned per $100 spent</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Points earned per ₹100 spent</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input 

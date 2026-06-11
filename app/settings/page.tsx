@@ -110,11 +110,11 @@ export default function AccountSettings() {
 
       // Fetch dynamic arrays
       Promise.all([
-        fetch("/api/addresses").then(r => r.json()).then(setAddresses).catch(() => {}),
-        fetch("/api/payments").then(r => r.json()).then(setPayments).catch(() => {}),
-        fetch("/api/price-requests").then(r => r.json()).then(data => setPriceRequests(data.filter((d:any) => d.customer_email === email))).catch(() => {}),
-        fetch("/api/discounts").then(r => r.json()).then(setCoupons).catch(() => {}),
-        fetch("/api/wishlist").then(r => r.json()).then(setWishlist).catch(() => {})
+        fetch("/api/addresses").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setAddresses(data) : null).catch(() => {}),
+        fetch("/api/payments").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setPayments(data) : null).catch(() => {}),
+        fetch("/api/price-requests").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setPriceRequests(data.filter((d:any) => d.customer_email === email)) : null).catch(() => {}),
+        fetch("/api/discounts").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setCoupons(data) : null).catch(() => {}),
+        fetch("/api/wishlist").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setWishlist(data) : null).catch(() => {})
       ]);
 
       // Fetch dynamic rewards configuration

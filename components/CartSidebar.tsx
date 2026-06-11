@@ -62,7 +62,7 @@ export default function CartSidebar() {
           ) : (
             items.map((item) => (
               <div key={item.id} className={styles.cartItem}>
-                <img src={item.image} alt={item.name} className={styles.itemImage} />
+                <img src={item.image || "/sequence/ezgif-frame-001.jpg"} alt={item.name} className={styles.itemImage} />
                 <div className={styles.itemDetails}>
                   <h4 className={styles.itemName}>{item.name}</h4>
                   <div className={styles.itemPrice}>{formatCurrency(item.price)}</div>

@@ -5,16 +5,33 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Package, MapPin, User, FileText, 
   Heart, Scale, Ticket, HeadphonesIcon, FileOutput, 
-  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings
+  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X
 } from "lucide-react";
 import styles from "./settings.module.css";
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useCompare } from "@/context/CompareContext";
 import Navigation from "@/components/Navigation";
 import CartSidebar from "@/components/CartSidebar";
 import { useRouter } from "next/navigation";
+
+const COUNTRY_CODES = [
+  { code: '+91', name: 'India' },
+  { code: '+1', name: 'US/Canada' },
+  { code: '+44', name: 'UK' },
+  { code: '+61', name: 'Australia' },
+  { code: '+81', name: 'Japan' },
+  { code: '+86', name: 'China' },
+  { code: '+49', name: 'Germany' },
+  { code: '+33', name: 'France' },
+  { code: '+971', name: 'UAE' },
+  { code: '+65', name: 'Singapore' },
+  { code: '+55', name: 'Brazil' },
+  { code: '+52', name: 'Mexico' },
+  { code: '+27', name: 'South Africa' }
+];
 
 export default function AccountSettings() {
   const router = useRouter();
@@ -23,7 +40,8 @@ export default function AccountSettings() {
   const [profile, setProfile] = useState({
     name: "",
     email: "",
-    phone: "",
+    phoneCode: "+91",
+    phoneNum: "",
     currency: "INR",
     language: "en",
     email_orders: true,
@@ -42,10 +60,12 @@ export default function AccountSettings() {
     referral_points: 500
   });
   const [products, setProducts] = useState<any[]>([]);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   const { addToCart } = useCart();
   const { currency, setCurrency, formatCurrency } = useCurrency();
   const [supportForm, setSupportForm] = useState({ subject: 'General Inquiry', message: '' });
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const { compareList, removeFromCompare } = useCompare();
 
   useEffect(() => {
     async function loadData() {
@@ -106,10 +126,21 @@ export default function AccountSettings() {
           referralCode = customer.referral_code || "";
           // Use the name saved in DB; fall back to auth metadata only if DB has no name
           const dbName = customer.name || name;
+          let code = "+91";
+          let num = customer.phone || "";
+          if (num.startsWith("+")) {
+            const match = num.match(/^(\+\d{1,4})\s*(.*)$/);
+            if (match) {
+              code = match[1];
+              num = match[2];
+            }
+          }
+          
           setProfile(p => ({
             ...p,
             name: dbName,
-            phone: customer.phone || "",
+            phoneCode: code,
+            phoneNum: num,
             currency: "INR",
             language: customer.language || "en",
             email_orders: customer.email_orders ?? true,
@@ -148,6 +179,7 @@ export default function AccountSettings() {
         const res = await fetch("/api/products");
         if (res.ok) {
           const data = await res.json();
+          setAllProducts(data);
           setProducts(data.slice(0, 3)); // show first 3
         }
       } catch (e) {}
@@ -172,7 +204,7 @@ export default function AccountSettings() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: profile.name,
-          phone: profile.phone,
+          phone: `${profile.phoneCode} ${profile.phoneNum}`.trim(),
           currency: profile.currency,
           language: profile.language,
           email_orders: profile.email_orders,
@@ -308,7 +340,7 @@ export default function AccountSettings() {
                 <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
                 <button className={styles.quickViewBtn}>QUICK VIEW</button>
                 <button className={styles.wishlistBtn} onClick={() => toggleWishlist(product.id)}>
-                  <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#fff"} />
+                  <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#666"} />
                 </button>
               </div>
               <div className={styles.productInfo}>
@@ -344,7 +376,26 @@ export default function AccountSettings() {
       </div>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Phone Number</label>
-        <input type="tel" className={styles.input} placeholder="+1 (555) 000-0000" value={profile.phone} onChange={(e) => setProfile(p => ({...p, phone: e.target.value}))} />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <select 
+            className={styles.input} 
+            style={{ width: '150px' }}
+            value={profile.phoneCode}
+            onChange={(e) => setProfile(p => ({...p, phoneCode: e.target.value}))}
+          >
+            {COUNTRY_CODES.map(c => (
+              <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+            ))}
+          </select>
+          <input 
+            type="tel" 
+            className={styles.input} 
+            style={{ flex: 1 }}
+            placeholder="98765 43210" 
+            value={profile.phoneNum} 
+            onChange={(e) => setProfile(p => ({...p, phoneNum: e.target.value}))} 
+          />
+        </div>
       </div>
       <button className={styles.saveBtn} onClick={updateProfile}><Save size={18} /> Save Changes</button>
     </motion.div>
@@ -434,19 +485,25 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <h2 className={styles.tabTitle}>My Wishlist</h2>
       <div className={styles.productGrid}>
-        {products.map((product) => (
-          <div key={product.id} className={styles.productCard}>
-            <div className={styles.productImageWrapper}>
-              <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
-              <button className={styles.wishlistBtn} style={{ color: '#ef4444', borderColor: '#ef4444' }}><Heart size={16} fill="#ef4444" /></button>
+        {allProducts.filter(p => wishlist.includes(p.id)).length === 0 ? (
+          <p style={{ color: 'var(--text-secondary)' }}>Your wishlist is empty.</p>
+        ) : (
+          allProducts.filter(p => wishlist.includes(p.id)).map((product) => (
+            <div key={product.id} className={styles.productCard}>
+              <div className={styles.productImageWrapper}>
+                <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
+                <button className={styles.wishlistBtn} style={{ color: '#ef4444', borderColor: '#ef4444' }} onClick={() => toggleWishlist(product.id)}>
+                  <Heart size={16} fill="#ef4444" />
+                </button>
+              </div>
+              <div className={styles.productInfo}>
+                <h4 className={styles.productName}>{product.name}</h4>
+                <p className={styles.price}>{formatCurrency(product.price)}</p>
+                <button className={styles.addToCartBtn} onClick={() => addToCart(product, 1)}>Add To Cart</button>
+              </div>
             </div>
-            <div className={styles.productInfo}>
-              <h4 className={styles.productName}>{product.name}</h4>
-              <p className={styles.price}>{formatCurrency(product.price)}</p>
-              <button className={styles.addToCartBtn} onClick={() => addToCart(product, 1)}>Add To Cart</button>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </motion.div>
   );
@@ -476,12 +533,41 @@ export default function AccountSettings() {
   const renderCompare = () => (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <h2 className={styles.tabTitle}>Compare Products</h2>
-      <div style={{ padding: '40px', textAlign: 'center', background: 'var(--background-secondary)', borderRadius: '12px', border: '2px dashed var(--nav-border)' }}>
-        <Scale size={48} color="#d1d5db" style={{ marginBottom: '16px' }} />
-        <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Your compare list is empty</h3>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Add products to compare their features and specifications.</p>
-        <button className={styles.saveBtn} style={{ margin: '0 auto' }} onClick={() => window.location.href = '/shop'}>Browse Products</button>
-      </div>
+      {compareList.length === 0 ? (
+        <div style={{ padding: '40px', textAlign: 'center', background: 'var(--background-secondary)', borderRadius: '12px', border: '2px dashed var(--nav-border)' }}>
+          <Scale size={48} color="#d1d5db" style={{ marginBottom: '16px' }} />
+          <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Your compare list is empty</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Add products to compare their features and specifications.</p>
+          <button className={styles.saveBtn} style={{ margin: '0 auto' }} onClick={() => window.location.href = '/shop'}>Browse Products</button>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(2, compareList.length)}, 1fr)`, gap: '20px', overflowX: 'auto', paddingBottom: '20px' }}>
+          {compareList.map((product) => (
+            <div key={product.id} className={styles.itemCard} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+              <button 
+                onClick={() => removeFromCompare(product.id)}
+                style={{ position: 'absolute', top: 10, right: 10, background: 'var(--background-primary)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 10 }}
+              >
+                <X size={14} color="var(--text-secondary)" />
+              </button>
+              <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '8px', marginBottom: '16px' }} />
+              <h3 style={{ fontSize: '1.1rem', marginBottom: '8px' }}>{product.name}</h3>
+              <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '16px' }}>{formatCurrency(product.price)}</p>
+              
+              <div style={{ flex: 1 }}>
+                {Object.entries(product.specs || {}).map(([key, val]) => (
+                  <div key={key} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--nav-border)', fontSize: '0.9rem' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>{key}</span>
+                    <span style={{ fontWeight: 500, textAlign: 'right', marginLeft: '10px' }}>{String(val)}</span>
+                  </div>
+                ))}
+              </div>
+              
+              <button className={styles.addToCartBtn} style={{ marginTop: '20px' }} onClick={() => addToCart(product, 1)}>Add To Cart</button>
+            </div>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 

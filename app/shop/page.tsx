@@ -3,18 +3,20 @@
 import Navigation from "@/components/Navigation";
 import { categories, type Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search, ChevronLeft, Heart } from "lucide-react";
+import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search, ChevronLeft, Heart, Scale } from "lucide-react";
 import styles from "./shop.module.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
 import CartSidebar from "@/components/CartSidebar";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useCompare } from "@/context/CompareContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Shop() {
   const router = useRouter();
   const { addToCart } = useCart();
+  const { compareList, addToCompare, removeFromCompare } = useCompare();
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("featured");
   const [searchQuery, setSearchQuery] = useState("");
@@ -122,6 +124,16 @@ export default function Shop() {
       alert("Failed to submit review.");
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const toggleCompare = (product: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const isComparing = compareList.some((p) => p.id === product.id);
+    if (isComparing) {
+      removeFromCompare(product.id);
+    } else {
+      addToCompare(product);
     }
   };
 
@@ -255,6 +267,15 @@ export default function Shop() {
                   <div className={styles.imageContainer}>
                     <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
                     {!product.inStock && <div className={styles.outOfStock}>Out of Stock</div>}
+                    
+                    <div className={styles.floatingActions}>
+                      <button className={styles.floatingBtnIcon} aria-label="Add to compare" onClick={(e) => toggleCompare(product, e)}>
+                        <Scale size={16} color={compareList.some(p => p.id === product.id) ? "#3b82f6" : "#fff"} />
+                      </button>
+                      <button className={styles.floatingBtnIcon} aria-label="Add to wishlist" onClick={(e) => toggleWishlist(product.id, e)}>
+                        <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#fff"} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Info */}
@@ -288,14 +309,16 @@ export default function Shop() {
                     </ul>
 
                     {/* Specs */}
-                    <div className={styles.specsGrid}>
-                      {Object.entries(product.specs).slice(0, 4).map(([k, v]) => (
-                        <div key={k} className={styles.specItem}>
-                          <span className={styles.specKey}>{k}</span>
-                          <span className={styles.specVal}>{v}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {product.specs && Object.keys(product.specs).length > 0 && (
+                      <div className={styles.specsGrid}>
+                        {Object.entries(product.specs).slice(0, 4).map(([k, v]) => (
+                          <div key={k} className={styles.specItem}>
+                            <span className={styles.specKey}>{k}</span>
+                            <span className={styles.specVal}>{String(v)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Price + CTA */}
                     <div className={styles.cardFooter}>
@@ -317,9 +340,6 @@ export default function Shop() {
                           ) : (
                             <><ShoppingCart size={15} /> Add to Cart</>
                           )}
-                        </button>
-                        <button className={styles.btnIcon} aria-label="Add to wishlist" onClick={(e) => toggleWishlist(product.id, e)}>
-                          <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#666"} />
                         </button>
                       </div>
                     </div>

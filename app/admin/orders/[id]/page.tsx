@@ -79,7 +79,8 @@ export default function OrderDetails({ params }: { params: Promise<{ id: string 
             <option value="Shipped">Shipped</option>
             <option value="Delivered">Delivered</option>
             <option value="Cancelled">Cancelled</option>
-            <option value="RTO">RTO (Returned)</option>
+            <option value="RTO">RTO (Pending Return)</option>
+            <option value="Restocked">RTO (Restocked)</option>
           </select>
         </div>
       </div>

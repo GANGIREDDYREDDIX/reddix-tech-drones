@@ -27,7 +27,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized. Please log in to place an order.' }, { status: 401 });
     }
 
-    const { items, total } = await request.json();
+    const { items: clientItems } = await request.json();
+
+    // Fetch latest products from database to ensure dynamic, up-to-date pricing
+    const { data: dbProducts, error: dbError } = await supabase.from('products').select('id, name, price, image');
+    if (dbError) throw dbError;
+
+    let dynamicTotal = 0;
+    const finalItems = clientItems.map((clientItem: any) => {
+      const dbProduct = dbProducts.find((p: any) => p.id === clientItem.id);
+      const currentPrice = dbProduct ? dbProduct.price : clientItem.price; // Fallback if product deleted
+      
+      dynamicTotal += currentPrice * clientItem.quantity;
+      
+      return {
+        ...clientItem,
+        price: currentPrice,
+        name: dbProduct ? dbProduct.name : clientItem.name // Keep name updated too
+      };
+    });
 
     const newOrder = {
       id: `ORD-${Math.floor(Math.random() * 100000)}`,
@@ -37,8 +55,8 @@ export async function POST(request: Request) {
       },
       date: new Date().toISOString(),
       status: 'Pending',
-      total: total,
-      items: items
+      total: dynamicTotal,
+      items: finalItems
     };
 
     const { data, error } = await supabase
@@ -53,7 +71,7 @@ export async function POST(request: Request) {
     try {
       const { data: config } = await supabase.from('rewards_config').select('*').eq('id', 'default').single();
       const multiplier = config ? config.purchases_multiplier : 1;
-      const pointsToAdd = Math.floor(total / 100) * multiplier;
+      const pointsToAdd = Math.floor(dynamicTotal / 100) * multiplier;
       
       if (pointsToAdd > 0) {
         const { data: customer } = await supabase.from('customers').select('points_issued').eq('email', user.email).single();

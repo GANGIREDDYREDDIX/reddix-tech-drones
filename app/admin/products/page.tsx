@@ -28,8 +28,8 @@ export default function AdminProducts() {
   const { formatCurrency, loading: currencyLoading } = useCurrency();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<Product>>({
-    id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, stockQuantity: 0, badge: "", tagline: "", rating: 5, reviews: 0
+  const [formData, setFormData] = useState<Partial<Product> & { specsText?: string, featuresText?: string }>({
+    id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, stockQuantity: 0, badge: "", tagline: "", rating: 5, reviews: 0, specsText: "", featuresText: ""
   });
   const [uploadingImg, setUploadingImg] = useState(false);
 
@@ -51,13 +51,17 @@ export default function AdminProducts() {
 
   const openAddModal = () => {
     setEditingId(null);
-    setFormData({ id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, features: [], specs: {}, badge: "", tagline: "", rating: 5, reviews: 0, stockQuantity: 0 });
+    setFormData({ id: "", name: "", price: 0, category: "Drones", description: "", image: "", inStock: true, features: [], specs: {}, badge: "", tagline: "", rating: 5, reviews: 0, stockQuantity: 0, specsText: "", featuresText: "" });
     setIsModalOpen(true);
   };
 
   const openEditModal = (product: Product) => {
     setEditingId(product.id);
-    setFormData(product);
+    setFormData({
+      ...product,
+      specsText: Object.entries(product.specs || {}).map(([k, v]) => `${k}: ${v}`).join("\n"),
+      featuresText: product.features?.join("\n") || ""
+    });
     setIsModalOpen(true);
   };
 
@@ -102,10 +106,32 @@ export default function AdminProducts() {
     const url = editingId ? `/api/products/${editingId}` : "/api/products";
     const method = editingId ? "PUT" : "POST";
 
+    const submitData = { ...formData };
+    
+    if (submitData.specsText !== undefined) {
+      const lines = submitData.specsText.split("\n");
+      const newSpecs: Record<string, string> = {};
+      lines.forEach(line => {
+        const parts = line.split(":");
+        if (parts.length >= 2) {
+          const k = parts[0].trim();
+          const v = parts.slice(1).join(":").trim();
+          if (k) newSpecs[k] = v;
+        }
+      });
+      submitData.specs = newSpecs;
+      delete submitData.specsText;
+    }
+
+    if (submitData.featuresText !== undefined) {
+      submitData.features = submitData.featuresText.split("\n").filter(f => f.trim());
+      delete submitData.featuresText;
+    }
+
     await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(submitData),
     });
 
     setIsModalOpen(false);
@@ -207,7 +233,7 @@ export default function AdminProducts() {
                     <input value={formData.badge || ""} onChange={e => setFormData({...formData, badge: e.target.value})} placeholder="e.g. ENTERPRISE" />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>Price (USD)</label>
+                    <label>Price (INR)</label>
                     <input required type="number" value={formData.price || 0} onChange={e => setFormData({...formData, price: Number(e.target.value)})} />
                   </div>
                   <div className={styles.formGroup}>
@@ -221,7 +247,19 @@ export default function AdminProducts() {
                   </div>
                   <div className={styles.formGroup}>
                     <label>Rating (1-5)</label>
-                    <input type="number" step="0.1" value={formData.rating || 5} onChange={e => setFormData({...formData, rating: Number(e.target.value)})} />
+                    <input 
+                      type="number" 
+                      step="0.1" 
+                      min="1" 
+                      max="5" 
+                      value={formData.rating || ""} 
+                      onChange={e => {
+                        let val = parseFloat(e.target.value);
+                        if (val > 5) val = 5;
+                        if (val < 0) val = 0;
+                        setFormData({...formData, rating: isNaN(val) ? 0 : val});
+                      }} 
+                    />
                   </div>
                   <div className={styles.formGroup}>
                     <label>Review Count</label>
@@ -267,28 +305,16 @@ export default function AdminProducts() {
                     <label>Features (One per line)</label>
                     <textarea 
                       rows={4} 
-                      value={formData.features?.join("\n") || ""} 
-                      onChange={e => setFormData({...formData, features: e.target.value.split("\n").filter(f => f.trim())})} 
+                      value={formData.featuresText !== undefined ? formData.featuresText : (formData.features?.join("\n") || "")} 
+                      onChange={e => setFormData({...formData, featuresText: e.target.value})} 
                       placeholder="Dual Thermal + RGB Sensor&#10;FLIR Boson 640x512..."></textarea>
                   </div>
                   <div className={styles.formGroup}>
                     <label>Specs (Key: Value per line)</label>
                     <textarea 
                       rows={4} 
-                      value={Object.entries(formData.specs || {}).map(([k, v]) => `${k}: ${v}`).join("\n")} 
-                      onChange={e => {
-                        const lines = e.target.value.split("\n");
-                        const newSpecs: Record<string, string> = {};
-                        lines.forEach(line => {
-                          const parts = line.split(":");
-                          if (parts.length >= 2) {
-                            const k = parts[0].trim();
-                            const v = parts.slice(1).join(":").trim();
-                            if (k) newSpecs[k] = v;
-                          }
-                        });
-                        setFormData({...formData, specs: newSpecs});
-                      }} 
+                      value={formData.specsText !== undefined ? formData.specsText : Object.entries(formData.specs || {}).map(([k, v]) => `${k}: ${v}`).join("\n")} 
+                      onChange={e => setFormData({...formData, specsText: e.target.value})} 
                       placeholder="WEIGHT: 1.2kg&#10;BATTERY: 8000 mAh..."></textarea>
                   </div>
                 </div>

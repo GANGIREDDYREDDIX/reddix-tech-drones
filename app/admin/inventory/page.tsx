@@ -53,14 +53,7 @@ export default function AdminInventory() {
     const newQty = localStock[product.id];
     
     try {
-      // We need to fetch the full product to not overwrite other fields, 
-      // or our API handles partial updates if we PUT to /api/products/[id]
-      // Our current API in route.ts expects the full product. Let's fetch it first.
-      const res = await fetch(`/api/products/${product.id}`);
-      const fullProduct = await res.json();
-      
       const payload = {
-        ...fullProduct,
         stockQuantity: newQty,
         inStock: newQty > 0
       };

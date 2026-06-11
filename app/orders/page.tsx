@@ -80,6 +80,7 @@ export default function MyOrders() {
 
   const getStatusStep = (status: string) => {
     const s = status.toLowerCase();
+    if (s.includes("cancel") || s.includes("rto") || s.includes("restock")) return -1;
     if (s.includes("deliver")) return 3;
     if (s.includes("ship")) return 2;
     return 1;
@@ -153,18 +154,30 @@ export default function MyOrders() {
                 {/* Status Progress Bar */}
                 <div className={styles.statusSection}>
                   <h3 className={styles.statusTitle}>
-                    {step === 3 ? "Delivered" : step === 2 ? "Shipped" : "Preparing for Shipment"}
+                    {step === -1 ? (order.status === "Cancelled" ? "Order Cancelled" : "Returned to Origin (RTO)") : step === 3 ? "Delivered" : step === 2 ? "Shipped" : "Preparing for Shipment"}
                   </h3>
-                  <div className={styles.progressBar}>
-                    <div className={styles.progressTrack}>
-                      <div className={styles.progressFill} style={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }}></div>
+                  {step !== -1 && (
+                    <div className={styles.progressBar}>
+                      <div className={styles.progressTrack}>
+                        <div className={styles.progressFill} style={{ width: step === 1 ? '33%' : step === 2 ? '66%' : '100%' }}></div>
+                      </div>
+                      <div className={styles.progressSteps}>
+                        <span className={step >= 1 ? styles.stepActive : ''}>Processing</span>
+                        <span className={step >= 2 ? styles.stepActive : ''}>Shipped</span>
+                        <span className={step >= 3 ? styles.stepActive : ''}>Delivered</span>
+                      </div>
                     </div>
-                    <div className={styles.progressSteps}>
-                      <span className={step >= 1 ? styles.stepActive : ''}>Processing</span>
-                      <span className={step >= 2 ? styles.stepActive : ''}>Shipped</span>
-                      <span className={step >= 3 ? styles.stepActive : ''}>Delivered</span>
+                  )}
+                  {step === -1 && (
+                    <div className={styles.progressBar}>
+                      <div className={styles.progressTrack} style={{ background: 'rgba(255, 59, 48, 0.2)' }}>
+                        <div className={styles.progressFill} style={{ width: '100%', background: 'var(--accent-red)' }}></div>
+                      </div>
+                      <div className={styles.progressSteps} style={{ color: 'var(--accent-red)' }}>
+                        <span className={styles.stepActive} style={{ color: 'var(--accent-red)' }}>{order.status === "Cancelled" ? "Cancelled" : "Returned"}</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Items List */}

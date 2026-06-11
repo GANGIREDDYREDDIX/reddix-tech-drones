@@ -12,9 +12,9 @@ export async function GET() {
     if (error) throw error;
     
     return NextResponse.json(carts || []);
-  } catch (error) {
-    console.error('Failed to read abandoned carts:', error);
-    return NextResponse.json({ error: 'Failed to read abandoned carts' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Failed to read abandoned carts. Error:', error?.message || error);
+    return NextResponse.json({ error: error?.message || 'Failed to read abandoned carts' }, { status: 500 });
   }
 }
 

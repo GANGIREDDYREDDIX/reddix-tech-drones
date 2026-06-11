@@ -24,7 +24,12 @@ export default function AbandonedCartsPage() {
     fetch("/api/abandoned-carts")
       .then(res => res.json())
       .then(data => {
-        setCarts(data);
+        if (data.error) {
+          console.error("API returned error:", data.error);
+          setCarts([]);
+        } else {
+          setCarts(Array.isArray(data) ? data : []);
+        }
         setLoading(false);
       })
       .catch(err => {

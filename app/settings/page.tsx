@@ -305,7 +305,7 @@ export default function AccountSettings() {
           {products.map((product) => (
             <div key={product.id} className={styles.productCard}>
               <div className={styles.productImageWrapper}>
-                <img src={product.imageUrl} alt={product.name} className={styles.productImage} />
+                <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
                 <button className={styles.quickViewBtn}>QUICK VIEW</button>
                 <button className={styles.wishlistBtn} onClick={() => toggleWishlist(product.id)}>
                   <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#fff"} />
@@ -443,7 +443,7 @@ export default function AccountSettings() {
         {products.map((product) => (
           <div key={product.id} className={styles.productCard}>
             <div className={styles.productImageWrapper}>
-              <img src={product.imageUrl} alt={product.name} className={styles.productImage} />
+              <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
               <button className={styles.wishlistBtn} style={{ color: '#ef4444', borderColor: '#ef4444' }}><Heart size={16} fill="#ef4444" /></button>
             </div>
             <div className={styles.productInfo}>

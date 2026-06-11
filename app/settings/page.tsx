@@ -27,10 +27,9 @@ export default function AccountSettings() {
     referralCode: "",
   });
   const [rewardsConfig, setRewardsConfig] = useState({
-    purchases_amount: 100,
-    purchases_points: 1,
-    reviews_points: 50,
-    referrals_points: 500
+    purchases_multiplier: 1,
+    review_points: 50,
+    referral_points: 500
   });
   const [products, setProducts] = useState<any[]>([]);
   const { addToCart } = useCart();
@@ -400,9 +399,9 @@ export default function AccountSettings() {
       <div style={{ background: 'var(--background-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--nav-border)' }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '16px' }}>How to earn more?</h3>
         <ul style={{ color: 'var(--text-secondary)', paddingLeft: '20px', lineHeight: 1.8 }}>
-          <li>Earn {rewardsConfig.purchases_points} point{rewardsConfig.purchases_points !== 1 ? 's' : ''} for every {formatCurrency(rewardsConfig.purchases_amount)} spent on our store.</li>
-          <li>Leave a product review ({rewardsConfig.reviews_points} points).</li>
-          <li>Refer a friend ({rewardsConfig.referrals_points} points).</li>
+          <li>Earn {rewardsConfig.purchases_multiplier} point{rewardsConfig.purchases_multiplier !== 1 ? 's' : ''} for every {formatCurrency(100)} spent on our store.</li>
+          <li>Leave a product review ({rewardsConfig.review_points} points).</li>
+          <li>Refer a friend ({rewardsConfig.referral_points} points).</li>
         </ul>
       </div>
     </motion.div>

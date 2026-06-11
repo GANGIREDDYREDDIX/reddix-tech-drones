@@ -53,6 +53,52 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // --- POINTS ENGINE LOGIC ---
+    try {
+      // 1. Check if the customer has already reviewed this product
+      const { data: existingReviews } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('customer_name', newReview.customerName)
+        .eq('product_id', newReview.productId)
+        // We exclude the newly created review itself
+        .neq('id', data.id);
+
+      if (!existingReviews || existingReviews.length === 0) {
+        // First time reviewing this product! Issue points.
+        
+        // 2. Fetch the current reward configuration for reviews
+        const { data: config } = await supabase
+          .from('rewards_config')
+          .select('review_points')
+          .eq('id', 'default')
+          .single();
+          
+        const pointsToAward = config?.review_points || 10;
+
+        // 3. Fetch current points for this customer
+        const { data: customer } = await supabase
+          .from('customers')
+          .select('id, points_issued')
+          .eq('name', newReview.customerName)
+          .single();
+
+        if (customer) {
+          // 4. Update the points balance
+          await supabase
+            .from('customers')
+            .update({ points_issued: (customer.points_issued || 0) + pointsToAward })
+            .eq('id', customer.id);
+            
+          console.log(`Issued ${pointsToAward} points to ${customer.id} for product review.`);
+        }
+      }
+    } catch (engineError) {
+      // We don't want points engine failures to break the review creation
+      console.error("Points Engine Error:", engineError);
+    }
+    // --- END POINTS ENGINE LOGIC ---
     
     const reviewToSave = {
       id: data.id,

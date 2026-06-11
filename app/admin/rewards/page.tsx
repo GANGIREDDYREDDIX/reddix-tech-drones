@@ -10,8 +10,15 @@ interface RewardsConfig {
   referral_points: number;
 }
 
+interface RewardsKPIs {
+  total_issued: number;
+  total_redeemed: number;
+  active_members: number;
+}
+
 export default function RewardsAdmin() {
   const [config, setConfig] = useState<RewardsConfig | null>(null);
+  const [kpis, setKpis] = useState<RewardsKPIs | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -20,7 +27,8 @@ export default function RewardsAdmin() {
       .then(res => res.json())
       .then(data => {
         if (!data.error) {
-          setConfig(data);
+          setConfig(data.config);
+          setKpis(data.kpis);
         }
         setLoading(false);
       })
@@ -64,7 +72,9 @@ export default function RewardsAdmin() {
               <Star size={18} style={{ color: '#f59e0b' }} />
             </div>
           </div>
-          <div className={styles.kpiValue}>145,200</div>
+          <div className={styles.kpiValue}>
+            {loading ? "..." : (kpis?.total_issued || 0).toLocaleString()}
+          </div>
         </div>
         <div className={styles.kpiCard}>
           <div className={styles.kpiHeader}>
@@ -73,7 +83,9 @@ export default function RewardsAdmin() {
               <Gift size={18} style={{ color: '#10b981' }} />
             </div>
           </div>
-          <div className={styles.kpiValue}>32,500</div>
+          <div className={styles.kpiValue}>
+            {loading ? "..." : (kpis?.total_redeemed || 0).toLocaleString()}
+          </div>
         </div>
         <div className={styles.kpiCard}>
           <div className={styles.kpiHeader}>
@@ -82,7 +94,9 @@ export default function RewardsAdmin() {
               <Users size={18} style={{ color: '#3b82f6' }} />
             </div>
           </div>
-          <div className={styles.kpiValue}>1,248</div>
+          <div className={styles.kpiValue}>
+            {loading ? "..." : (kpis?.active_members || 0).toLocaleString()}
+          </div>
         </div>
       </div>
 
@@ -98,7 +112,7 @@ export default function RewardsAdmin() {
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px', background: 'var(--background-secondary)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div>
                   <h4 style={{ color: 'var(--text-primary)', marginBottom: '4px' }}>Purchases</h4>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Points earned per $1 spent</p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Points earned per $100 spent</p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input 

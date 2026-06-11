@@ -4,27 +4,54 @@ import { createClient } from '@/utils/supabase/server';
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: config, error } = await supabase
+    
+    // Fetch configuration
+    const { data: config, error: configError } = await supabase
       .from('rewards_config')
       .select('*')
       .eq('id', 'default')
       .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // Return default values if row doesn't exist
-        return NextResponse.json({
+    let finalConfig = config;
+
+    if (configError) {
+      if (configError.code === 'PGRST116') {
+        // Default values if row doesn't exist
+        finalConfig = {
           id: 'default',
           purchases_multiplier: 1,
           review_points: 50,
           referral_points: 500
-        });
+        };
+      } else {
+        console.error("Supabase Error Details:", configError);
+        throw configError;
       }
-      console.error("Supabase Error Details:", error);
-      throw error;
     }
     
-    return NextResponse.json(config);
+    // Fetch customer data for KPIs
+    const { data: customers, error: customersError } = await supabase
+      .from('customers')
+      .select('points_issued, points_redeemed, status');
+      
+    let kpis = {
+      total_issued: 0,
+      total_redeemed: 0,
+      active_members: 0
+    };
+    
+    if (!customersError && customers) {
+      customers.forEach(c => {
+        kpis.total_issued += (c.points_issued || 0);
+        kpis.total_redeemed += (c.points_redeemed || 0);
+        if (c.status === 'Active') kpis.active_members++;
+      });
+    }
+    
+    return NextResponse.json({
+      config: finalConfig,
+      kpis: kpis
+    });
   } catch (error) {
     console.error('Failed to read rewards config:', error);
     return NextResponse.json({ error: 'Failed to read rewards config', details: error }, { status: 500 });

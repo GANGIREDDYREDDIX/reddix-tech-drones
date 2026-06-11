@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     const newTicket = {
       id: `TKT-${Math.floor(Math.random() * 100000)}`,
-      customer: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
+      customer_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
       customer_email: user.email,
       subject: subject,
       status: 'Open',

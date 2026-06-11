@@ -3,7 +3,7 @@
 import Navigation from "@/components/Navigation";
 import { categories, type Product } from "@/data/products";
 import { useCart } from "@/context/CartContext";
-import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search, ChevronLeft } from "lucide-react";
+import { ShoppingCart, Star, Shield, Truck, RotateCcw, ChevronDown, X, SlidersHorizontal, Search, ChevronLeft, Heart } from "lucide-react";
 import styles from "./shop.module.css";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useMemo, useEffect } from "react";
@@ -26,6 +26,7 @@ export default function Shop() {
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, customerName: "", text: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [wishlist, setWishlist] = useState<string[]>([]);
 
   useEffect(() => {
     fetch('/api/products')
@@ -38,7 +39,36 @@ export default function Shop() {
         console.error(err);
         setIsLoading(false);
       });
+
+    const checkWishlist = async () => {
+      try {
+        const res = await fetch("/api/wishlist");
+        if (res.ok) {
+          const w = await res.json();
+          setWishlist(w || []);
+        }
+      } catch (e) {}
+    };
+    checkWishlist();
   }, []);
+
+  const toggleWishlist = async (product_id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.action === "added") setWishlist([...wishlist, product_id]);
+        else setWishlist(wishlist.filter(id => id !== product_id));
+      } else {
+        alert("Please log in to add to wishlist.");
+      }
+    } catch (e) {}
+  };
 
   const filteredProducts = useMemo(() => {
     let result = dbProducts;
@@ -276,17 +306,22 @@ export default function Shop() {
                         )}
                       </div>
 
-                      <button
-                        className={`${styles.addToCartBtn} ${addedId === product.id ? styles.added : ""}`}
-                        onClick={() => handleAddToCart(product)}
-                        disabled={!product.inStock}
-                      >
-                        {addedId === product.id ? (
-                          "✓ Added!"
-                        ) : (
-                          <><ShoppingCart size={15} /> Add to Cart</>
-                        )}
-                      </button>
+                      <div className={styles.productActions}>
+                        <button
+                          className={`${styles.addToCartBtn} ${addedId === product.id ? styles.added : ""}`}
+                          onClick={() => handleAddToCart(product)}
+                          disabled={!product.inStock}
+                        >
+                          {addedId === product.id ? (
+                            "✓ Added!"
+                          ) : (
+                            <><ShoppingCart size={15} /> Add to Cart</>
+                          )}
+                        </button>
+                        <button className={styles.btnIcon} aria-label="Add to wishlist" onClick={(e) => toggleWishlist(product.id, e)}>
+                          <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#666"} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -336,35 +371,35 @@ export default function Shop() {
               <h3>Reddix Tech Enterprises</h3>
               <p>Transforming industries through custom aerial systems, precision 3D printing, and enterprise-grade technology solutions.</p>
               <div className={styles.socialLinks}>
-                <a href="#" aria-label="Instagram">📷</a>
-                <a href="#" aria-label="YouTube">▶️</a>
-                <a href="#" aria-label="LinkedIn">💼</a>
-                <a href="#" aria-label="Twitter">🐦</a>
+                <a href="/coming-soon" aria-label="Instagram">📷</a>
+                <a href="/coming-soon" aria-label="YouTube">▶️</a>
+                <a href="/coming-soon" aria-label="LinkedIn">💼</a>
+                <a href="/coming-soon" aria-label="Twitter">🐦</a>
               </div>
             </div>
 
             <div className={styles.footerCol}>
               <h4>Products</h4>
-              <a href="#">Professional Drones</a>
-              <a href="#">Enterprise Systems</a>
-              <a href="#">Accessories</a>
-              <a href="#">3D Print Service</a>
+              <a href="/coming-soon">Professional Drones</a>
+              <a href="/coming-soon">Enterprise Systems</a>
+              <a href="/coming-soon">Accessories</a>
+              <a href="/coming-soon">3D Print Service</a>
             </div>
 
             <div className={styles.footerCol}>
               <h4>Support</h4>
-              <a href="#">Getting Started</a>
-              <a href="#">Warranty & Repairs</a>
-              <a href="#">FAQs</a>
-              <a href="#">Contact Us</a>
+              <a href="/coming-soon">Getting Started</a>
+              <a href="/coming-soon">Warranty & Repairs</a>
+              <a href="/coming-soon">FAQs</a>
+              <a href="/coming-soon">Contact Us</a>
             </div>
 
             <div className={styles.footerCol}>
               <h4>Company</h4>
-              <a href="#">About Us</a>
-              <a href="#">Careers</a>
-              <a href="#">Privacy Policy</a>
-              <a href="#">Terms of Service</a>
+              <a href="/coming-soon">About Us</a>
+              <a href="/coming-soon">Careers</a>
+              <a href="/coming-soon">Privacy Policy</a>
+              <a href="/coming-soon">Terms of Service</a>
             </div>
           </div>
 

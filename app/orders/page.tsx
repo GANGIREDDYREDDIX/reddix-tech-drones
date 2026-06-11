@@ -179,8 +179,8 @@ export default function MyOrders() {
                         <p className={styles.itemPrice}>{!currencyLoading ? formatCurrency(item.price) : "..."}</p>
                         <p className={styles.itemMeta}>Qty: {item.quantity}</p>
                         <div className={styles.itemActions}>
-                          <button className={styles.actionBtn}><Package size={14} /> Track Package</button>
-                          <button className={styles.actionBtn}><ExternalLink size={14} /> Buy it again</button>
+                          <button className={styles.actionBtn} onClick={() => alert("Tracking information will be sent to your email shortly!")}><Package size={14} /> Track Package</button>
+                          <button className={styles.actionBtn} onClick={() => window.location.href = '/shop'}><ExternalLink size={14} /> Buy it again</button>
                         </div>
                       </div>
                     </div>

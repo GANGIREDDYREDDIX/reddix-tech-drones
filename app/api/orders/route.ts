@@ -31,12 +31,14 @@ export async function POST(request: Request) {
 
     const newOrder = {
       id: `ORD-${Math.floor(Math.random() * 100000)}`,
-      customer: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
-      customer_email: user.email,
+      customer: {
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
+        email: user.email
+      },
       date: new Date().toISOString(),
       status: 'Pending',
       total: total,
-      items: items.length
+      items: items
     };
 
     const { data, error } = await supabase

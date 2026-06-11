@@ -23,9 +23,19 @@ export default function AccountSettings() {
   const [profile, setProfile] = useState({
     name: "",
     email: "",
+    phone: "",
+    currency: "USD",
+    language: "en",
+    email_orders: true,
+    email_offers: false,
     points: 0,
     referralCode: "",
   });
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [priceRequests, setPriceRequests] = useState<any[]>([]);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [rewardsConfig, setRewardsConfig] = useState({
     purchases_multiplier: 1,
     review_points: 50,
@@ -56,7 +66,7 @@ export default function AccountSettings() {
       try {
         const { data: customer, error } = await supabase
           .from('customers')
-          .select('points_issued, points_redeemed, referral_code')
+          .select('points_issued, points_redeemed, referral_code, phone, currency, language, email_orders, email_offers')
           .eq('email', email)
           .single();
           
@@ -82,12 +92,30 @@ export default function AccountSettings() {
         } else if (customer) {
           points = (customer.points_issued || 0) - (customer.points_redeemed || 0);
           referralCode = customer.referral_code || "";
+          setProfile(p => ({
+            ...p, 
+            phone: customer.phone || "",
+            currency: customer.currency || "USD",
+            language: customer.language || "en",
+            email_orders: customer.email_orders ?? true,
+            email_offers: customer.email_offers ?? false
+          }));
+          if (customer.currency) setCurrency(customer.currency);
         }
       } catch (e) {
         console.error("Error fetching customer data:", e);
       }
       
-      setProfile({ name, email, points, referralCode });
+      setProfile(p => ({ ...p, name, email, points, referralCode }));
+
+      // Fetch dynamic arrays
+      Promise.all([
+        fetch("/api/addresses").then(r => r.json()).then(setAddresses).catch(() => {}),
+        fetch("/api/payments").then(r => r.json()).then(setPayments).catch(() => {}),
+        fetch("/api/price-requests").then(r => r.json()).then(data => setPriceRequests(data.filter((d:any) => d.customer_email === email))).catch(() => {}),
+        fetch("/api/discounts").then(r => r.json()).then(setCoupons).catch(() => {}),
+        fetch("/api/wishlist").then(r => r.json()).then(setWishlist).catch(() => {})
+      ]);
 
       // Fetch dynamic rewards configuration
       try {
@@ -121,6 +149,113 @@ export default function AccountSettings() {
     window.location.href = "/";
   };
 
+  const updateProfile = async () => {
+    try {
+      const res = await fetch("/api/customers", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: profile.name,
+          phone: profile.phone,
+          currency: profile.currency,
+          language: profile.language,
+          email_orders: profile.email_orders,
+          email_offers: profile.email_offers
+        })
+      });
+      if (res.ok) alert("Profile updated successfully!");
+      else alert("Failed to update profile.");
+    } catch (e) {
+      alert("An error occurred.");
+    }
+  };
+
+  const addAddress = async () => {
+    const street = prompt("Street Address:");
+    if (!street) return;
+    const city = prompt("City:");
+    const state = prompt("State:");
+    const zip = prompt("Zip:");
+    const country = prompt("Country:", "USA");
+    
+    try {
+      const res = await fetch("/api/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ street, city, state, zip, country, type: "Shipping", is_default: addresses.length === 0 })
+      });
+      if (res.ok) {
+        const newAddress = await res.json();
+        setAddresses([newAddress, ...addresses]);
+      }
+    } catch (e) {}
+  };
+
+  const removeAddress = async (id: string) => {
+    try {
+      const res = await fetch(`/api/addresses?id=${id}`, { method: "DELETE" });
+      if (res.ok) setAddresses(addresses.filter(a => a.id !== id));
+    } catch (e) {}
+  };
+
+  const addPayment = async () => {
+    const last4 = prompt("Enter last 4 digits of card:");
+    if (!last4) return;
+    try {
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ last4, type: "Visa", exp_month: "12", exp_year: "2028", is_default: payments.length === 0 })
+      });
+      if (res.ok) {
+        const newPayment = await res.json();
+        setPayments([newPayment, ...payments]);
+      }
+    } catch (e) {}
+  };
+
+  const removePayment = async (id: string) => {
+    try {
+      const res = await fetch(`/api/payments?id=${id}`, { method: "DELETE" });
+      if (res.ok) setPayments(payments.filter(p => p.id !== id));
+    } catch (e) {}
+  };
+
+  const toggleWishlist = async (product_id: string) => {
+    try {
+      const res = await fetch("/api/wishlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.action === "added") setWishlist([...wishlist, product_id]);
+        else setWishlist(wishlist.filter(id => id !== product_id));
+      }
+    } catch (e) {}
+  };
+
+  const addPriceRequest = async () => {
+    const product_id = prompt("Enter Product ID for bulk pricing (e.g. 1):");
+    if (!product_id) return;
+    const quantity = parseInt(prompt("Quantity:") || "10", 10);
+    const requested_price = parseFloat(prompt("Requested Total Price:") || "0");
+    
+    try {
+      const res = await fetch("/api/price-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ product_id, quantity, requested_price })
+      });
+      if (res.ok) {
+        const newReq = await res.json();
+        setPriceRequests([newReq, ...priceRequests]);
+        alert("Request submitted!");
+      }
+    } catch (e) {}
+  };
+
   if (loading) {
     return <div className={styles.container}><div className={styles.loading}>Loading your account...</div></div>;
   }
@@ -152,7 +287,9 @@ export default function AccountSettings() {
               <div className={styles.productImageWrapper}>
                 <img src={product.imageUrl} alt={product.name} className={styles.productImage} />
                 <button className={styles.quickViewBtn}>QUICK VIEW</button>
-                <button className={styles.wishlistBtn}><Heart size={16} /></button>
+                <button className={styles.wishlistBtn} onClick={() => toggleWishlist(product.id)}>
+                  <Heart size={16} fill={wishlist.includes(product.id) ? "#ef4444" : "transparent"} color={wishlist.includes(product.id) ? "#ef4444" : "#fff"} />
+                </button>
               </div>
               <div className={styles.productInfo}>
                 <h4 className={styles.productName}>{product.name}</h4>
@@ -179,17 +316,17 @@ export default function AccountSettings() {
       <h2 className={styles.tabTitle}>Profile Details</h2>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Full Name</label>
-        <input type="text" className={styles.input} defaultValue={profile.name} />
+        <input type="text" className={styles.input} value={profile.name} onChange={(e) => setProfile(p => ({...p, name: e.target.value}))} />
       </div>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Email Address</label>
-        <input type="email" className={styles.input} defaultValue={profile.email} disabled />
+        <input type="email" className={styles.input} value={profile.email} disabled />
       </div>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Phone Number</label>
-        <input type="tel" className={styles.input} placeholder="+1 (555) 000-0000" />
+        <input type="tel" className={styles.input} placeholder="+1 (555) 000-0000" value={profile.phone} onChange={(e) => setProfile(p => ({...p, phone: e.target.value}))} />
       </div>
-      <button className={styles.saveBtn}><Save size={18} /> Save Changes</button>
+      <button className={styles.saveBtn} onClick={updateProfile}><Save size={18} /> Save Changes</button>
     </motion.div>
   );
 
@@ -197,19 +334,21 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 className={styles.tabTitle} style={{ marginBottom: 0 }}>Saved Addresses</h2>
-        <button className={styles.addBtn}><Plus size={16} /> Add New</button>
+        <button className={styles.addBtn} onClick={addAddress}><Plus size={16} /> Add New</button>
       </div>
       <div className={styles.cardList}>
-        <div className={styles.itemCard}>
-          <div className={styles.itemCardHeader}>
-            <span className={styles.itemType}>Shipping</span>
-            <span className={styles.defaultBadge}>DEFAULT</span>
+        {addresses.length === 0 ? <p>No addresses found.</p> : addresses.map(addr => (
+          <div key={addr.id} className={styles.itemCard}>
+            <div className={styles.itemCardHeader}>
+              <span className={styles.itemType}>{addr.type}</span>
+              {addr.is_default && <span className={styles.defaultBadge}>DEFAULT</span>}
+            </div>
+            <div className={styles.itemDetail}>
+              {addr.street}, {addr.city}, {addr.state} {addr.zip} {addr.country}
+            </div>
+            <button className={styles.deleteBtn} onClick={() => removeAddress(addr.id)}><Trash2 size={16} /> Remove</button>
           </div>
-          <div className={styles.itemDetail}>
-            123 Tech Lane, Silicon Valley, CA 94025
-          </div>
-          <button className={styles.deleteBtn}><Trash2 size={16} /> Remove</button>
-        </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -218,21 +357,23 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 className={styles.tabTitle} style={{ marginBottom: 0 }}>Payment Methods</h2>
-        <button className={styles.addBtn}><Plus size={16} /> Add New</button>
+        <button className={styles.addBtn} onClick={addPayment}><Plus size={16} /> Add New</button>
       </div>
       <div className={styles.cardList}>
-        <div className={styles.itemCard}>
-          <div className={styles.itemCardHeader}>
-            <span className={styles.itemType} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CreditCard size={20} /> Visa ending in 4242
-            </span>
-            <span className={styles.defaultBadge}>DEFAULT</span>
+        {payments.length === 0 ? <p>No payment methods found.</p> : payments.map(pay => (
+          <div key={pay.id} className={styles.itemCard}>
+            <div className={styles.itemCardHeader}>
+              <span className={styles.itemType} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CreditCard size={20} /> {pay.type} ending in {pay.last4}
+              </span>
+              {pay.is_default && <span className={styles.defaultBadge}>DEFAULT</span>}
+            </div>
+            <div className={styles.itemDetail}>
+              Expires {pay.exp_month}/{pay.exp_year}
+            </div>
+            <button className={styles.deleteBtn} onClick={() => removePayment(pay.id)}><Trash2 size={16} /> Remove</button>
           </div>
-          <div className={styles.itemDetail}>
-            Expires 12/2028
-          </div>
-          <button className={styles.deleteBtn}><Trash2 size={16} /> Remove</button>
-        </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -242,7 +383,10 @@ export default function AccountSettings() {
       <h2 className={styles.tabTitle}>Preferences</h2>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Currency</label>
-        <select className={styles.selectInput} value={currency.toLowerCase()} onChange={(e) => setCurrency(e.target.value.toUpperCase() as any)}>
+        <select className={styles.selectInput} value={profile.currency.toLowerCase()} onChange={(e) => {
+          setProfile(p => ({...p, currency: e.target.value.toUpperCase()}));
+          setCurrency(e.target.value.toUpperCase() as any);
+        }}>
           <option value="usd">USD ($)</option>
           <option value="eur">EUR (€)</option>
           <option value="gbp">GBP (£)</option>
@@ -251,7 +395,7 @@ export default function AccountSettings() {
       </div>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Language</label>
-        <select className={styles.selectInput} defaultValue="en">
+        <select className={styles.selectInput} value={profile.language} onChange={(e) => setProfile(p => ({...p, language: e.target.value}))}>
           <option value="en">English</option>
           <option value="es">Spanish</option>
           <option value="fr">French</option>
@@ -260,15 +404,15 @@ export default function AccountSettings() {
       <div className={styles.formGroup} style={{ marginTop: '30px' }}>
         <h3 className={styles.inputLabel} style={{ marginBottom: '12px' }}>Notifications</h3>
         <label className={styles.checkboxLabel}>
-          <input type="checkbox" defaultChecked />
+          <input type="checkbox" checked={profile.email_orders} onChange={(e) => setProfile(p => ({...p, email_orders: e.target.checked}))} />
           Order Updates via Email
         </label>
         <label className={styles.checkboxLabel} style={{ marginTop: '8px' }}>
-          <input type="checkbox" />
+          <input type="checkbox" checked={profile.email_offers} onChange={(e) => setProfile(p => ({...p, email_offers: e.target.checked}))} />
           Newsletter and Special Offers
         </label>
       </div>
-      <button className={styles.saveBtn}><Save size={18} /> Save Preferences</button>
+      <button className={styles.saveBtn} onClick={updateProfile}><Save size={18} /> Save Preferences</button>
     </motion.div>
   );
 
@@ -297,18 +441,20 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 className={styles.tabTitle} style={{ marginBottom: 0 }}>Price Requests</h2>
-        <button className={styles.addBtn}><Plus size={16} /> New Request</button>
+        <button className={styles.addBtn} onClick={addPriceRequest}><Plus size={16} /> New Request</button>
       </div>
       <div className={styles.cardList}>
-        <div className={styles.itemCard}>
-          <div className={styles.itemCardHeader}>
-            <span className={styles.itemType}>Reddix Pro X1 Drone (Bulk Order: 10 units)</span>
-            <span className={styles.defaultBadge} style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>PENDING</span>
+        {priceRequests.length === 0 ? <p>No price requests found.</p> : priceRequests.map(req => (
+          <div key={req.id} className={styles.itemCard}>
+            <div className={styles.itemCardHeader}>
+              <span className={styles.itemType}>Product ID: {req.product_id} (Bulk Order: {req.quantity} units)</span>
+              <span className={styles.defaultBadge} style={{ background: req.status === 'Pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: req.status === 'Pending' ? '#f59e0b' : '#10b981' }}>{req.status.toUpperCase()}</span>
+            </div>
+            <div className={styles.itemDetail}>
+              Requested Price: {formatCurrency(req.requested_price)} • Submitted: {new Date(req.date).toLocaleDateString()}
+            </div>
           </div>
-          <div className={styles.itemDetail}>
-            Requested Price: {formatCurrency(20000)} • Submitted: Oct 12, 2026
-          </div>
-        </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -320,7 +466,7 @@ export default function AccountSettings() {
         <Scale size={48} color="#d1d5db" style={{ marginBottom: '16px' }} />
         <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Your compare list is empty</h3>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Add products to compare their features and specifications.</p>
-        <button className={styles.saveBtn} style={{ margin: '0 auto' }}>Browse Products</button>
+        <button className={styles.saveBtn} style={{ margin: '0 auto' }} onClick={() => window.location.href = '/shop'}>Browse Products</button>
       </div>
     </motion.div>
   );
@@ -329,18 +475,14 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <h2 className={styles.tabTitle}>My Coupons</h2>
       <div className={styles.productGrid}>
-        <div className={styles.itemCard} style={{ borderLeft: '4px solid #10b981' }}>
-          <h3 style={{ fontSize: '1.5rem', color: '#10b981', marginBottom: '8px' }}>10% OFF</h3>
-          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: '4px' }}>Welcome Bonus</p>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>Valid until Dec 31, 2026</p>
-          <div style={{ background: 'var(--background-secondary)', padding: '8px', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '2px', border: '1px dashed rgba(var(--text-primary-rgb), 0.2)' }}>WELCOME10</div>
-        </div>
-        <div className={styles.itemCard} style={{ borderLeft: '4px solid #3b82f6' }}>
-          <h3 style={{ fontSize: '1.5rem', color: '#3b82f6', marginBottom: '8px' }}>FREE SHIP</h3>
-          <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: '4px' }}>Orders over {formatCurrency(500)}</p>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>No expiration</p>
-          <div style={{ background: 'var(--background-secondary)', padding: '8px', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '2px', border: '1px dashed rgba(var(--text-primary-rgb), 0.2)' }}>FREESHIP500</div>
-        </div>
+        {coupons.length === 0 ? <p>No coupons available right now.</p> : coupons.map(coupon => (
+          <div key={coupon.id} className={styles.itemCard} style={{ borderLeft: '4px solid #10b981' }}>
+            <h3 style={{ fontSize: '1.5rem', color: '#10b981', marginBottom: '8px' }}>{coupon.type === 'percentage' ? `${coupon.value}% OFF` : formatCurrency(coupon.value) + ' OFF'}</h3>
+            <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: '4px' }}>Discount Code</p>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>{coupon.expiry ? `Valid until ${new Date(coupon.expiry).toLocaleDateString()}` : 'No expiration'}</p>
+            <div style={{ background: 'var(--background-secondary)', padding: '8px', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '2px', border: '1px dashed rgba(var(--text-primary-rgb), 0.2)' }}>{coupon.code}</div>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -443,7 +585,7 @@ export default function AccountSettings() {
       <div style={{ background: 'var(--background-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--nav-border)' }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '16px' }}>How to earn more?</h3>
         <ul style={{ color: 'var(--text-secondary)', paddingLeft: '20px', lineHeight: 1.8 }}>
-          <li>Earn {rewardsConfig.purchases_multiplier} point{rewardsConfig.purchases_multiplier !== 1 ? 's' : ''} for every {formatCurrency(100)} spent on our store.</li>
+          <li>Earn {rewardsConfig.purchases_multiplier} point{rewardsConfig.purchases_multiplier !== 1 ? 's' : ''} for every 100 {currency} spent on our store.</li>
           <li>Leave a product review ({rewardsConfig.review_points} points).</li>
           <li>Refer a friend ({rewardsConfig.referral_points} points).</li>
         </ul>

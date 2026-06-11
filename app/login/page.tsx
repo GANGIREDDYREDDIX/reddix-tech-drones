@@ -133,6 +133,13 @@ function CustomerAuthForm() {
           }
         });
         if (signUpError) throw signUpError;
+
+        // Trigger welcome email silently in the background
+        fetch('/api/welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, name: name || email.split('@')[0] })
+        }).catch(e => console.error('Failed to send welcome email', e));
       }
       
       document.cookie = `customer_name=${encodeURIComponent(name || email.split('@')[0])}; path=/; max-age=2592000`;

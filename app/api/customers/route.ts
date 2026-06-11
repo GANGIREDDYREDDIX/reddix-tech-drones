@@ -21,15 +21,17 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (authError || !user || !user.email) {
+      console.error('Auth error:', authError);
+      return NextResponse.json({ error: 'Unauthorized - not logged in' }, { status: 401 });
     }
 
     const payload = await request.json();
 
-    const updates: any = {};
+    // Only include fields that were actually sent
+    const updates: Record<string, any> = {};
     if (payload.name !== undefined) updates.name = payload.name;
     if (payload.phone !== undefined) updates.phone = payload.phone;
     if (payload.currency !== undefined) updates.currency = payload.currency;
@@ -37,18 +39,62 @@ export async function PUT(request: Request) {
     if (payload.email_orders !== undefined) updates.email_orders = payload.email_orders;
     if (payload.email_offers !== undefined) updates.email_offers = payload.email_offers;
 
-    const { data, error } = await supabase
-      .from('customers')
-      .update(updates)
-      .eq('email', user.email)
-      .select()
-      .single();
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ message: 'Nothing to update' });
+    }
 
-    if (error) throw error;
+    // First check if a customer row exists for this user
+    const { data: existing, error: fetchError } = await supabase
+      .from('customers')
+      .select('email')
+      .eq('email', user.email)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Fetch error:', fetchError);
+      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+    }
+
+    let result;
+
+    if (!existing) {
+      // Row doesn't exist — create it first
+      const { data, error: insertError } = await supabase
+        .from('customers')
+        .insert({
+          id: `CUST-${Date.now()}`,
+          email: user.email,
+          name: updates.name || user.user_metadata?.full_name || 'User',
+          ...updates,
+          status: 'Active',
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
+      }
+      result = data;
+    } else {
+      // Row exists — update it
+      const { data, error: updateError } = await supabase
+        .from('customers')
+        .update(updates)
+        .eq('email', user.email)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+      result = data;
+    }
     
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Failed to update customer:', error);
-    return NextResponse.json({ error: 'Failed to update customer profile' }, { status: 500 });
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error('Unexpected error updating customer:', error);
+    return NextResponse.json({ error: error?.message || 'Unexpected server error' }, { status: 500 });
   }
 }

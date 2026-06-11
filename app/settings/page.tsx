@@ -163,10 +163,14 @@ export default function AccountSettings() {
           email_offers: profile.email_offers
         })
       });
-      if (res.ok) alert("Profile updated successfully!");
-      else alert("Failed to update profile.");
-    } catch (e) {
-      alert("An error occurred.");
+      const data = await res.json();
+      if (res.ok) {
+        alert("Profile updated successfully!");
+      } else {
+        alert("Failed to update profile: " + (data?.error || res.status));
+      }
+    } catch (e: any) {
+      alert("An error occurred: " + e.message);
     }
   };
 

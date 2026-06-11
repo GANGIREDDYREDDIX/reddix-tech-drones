@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 import styles from "./support.module.css";
 
 interface Ticket {
@@ -9,6 +9,8 @@ interface Ticket {
   customer_name: string;
   customer_email: string;
   subject: string;
+  message?: string;
+  admin_reply?: string;
   status: "Open" | "In Progress" | "Closed";
   priority: "High" | "Medium" | "Low";
   date: string;
@@ -17,6 +19,8 @@ interface Ticket {
 export default function SupportPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
     fetch("/api/support")
@@ -31,8 +35,44 @@ export default function SupportPage() {
       });
   }, []);
 
+  const handleTicketUpdate = (id: string, updates: Partial<Ticket>) => {
+    setTickets(tickets.map(t => t.id === id ? { ...t, ...updates } : t));
+  };
+
   const handleStatusChange = (id: string, newStatus: string) => {
-    setTickets(tickets.map(t => t.id === id ? { ...t, status: newStatus as Ticket["status"] } : t));
+    handleTicketUpdate(id, { status: newStatus as Ticket["status"] });
+  };
+
+  const handleReplySubmit = async () => {
+    if (!selectedTicket) return;
+    
+    const originalStatus = selectedTicket.status;
+    const originalReply = selectedTicket.admin_reply;
+    
+    // Optimistically update
+    handleTicketUpdate(selectedTicket.id, { status: "In Progress", admin_reply: replyText });
+    setSelectedTicket(null);
+    setReplyText("");
+
+    try {
+      const res = await fetch("/api/support", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          id: selectedTicket.id, 
+          admin_reply: replyText, 
+          status: "In Progress" 
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send reply");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error sending reply");
+      handleTicketUpdate(selectedTicket.id, { status: originalStatus, admin_reply: originalReply }); // revert
+    }
   };
 
   return (
@@ -94,7 +134,13 @@ export default function SupportPage() {
                   {new Date(ticket.date).toLocaleDateString()}
                 </td>
                 <td className={styles.actionsCell}>
-                  <button className={styles.actionBtn}>
+                  <button 
+                    className={styles.actionBtn} 
+                    onClick={() => {
+                      setSelectedTicket(ticket);
+                      setReplyText(ticket.admin_reply || "");
+                    }}
+                  >
                     <MessageSquare size={16} /> Reply
                   </button>
                 </td>
@@ -103,6 +149,44 @@ export default function SupportPage() {
           </tbody>
         </table>
       </div>
+
+      {/* Reply Modal */}
+      {selectedTicket && (
+        <div className={styles.modalOverlay} onClick={() => setSelectedTicket(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h2>Reply to {selectedTicket.id}</h2>
+              <button className={styles.actionBtn} onClick={() => setSelectedTicket(null)} aria-label="Close">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Customer Message:</p>
+                <div className={styles.messageBox}>
+                  {selectedTicket.message || "No description provided by customer."}
+                </div>
+              </div>
+
+              <div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Your Reply:</p>
+                <textarea 
+                  className={styles.replyTextarea} 
+                  placeholder="Type your response here..."
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className={styles.modalFooter}>
+              <button className={styles.cancelBtn} onClick={() => setSelectedTicket(null)}>Cancel</button>
+              <button className={styles.sendBtn} onClick={handleReplySubmit}>Send Reply</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

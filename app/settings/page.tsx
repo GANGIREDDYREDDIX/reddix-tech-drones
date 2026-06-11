@@ -65,6 +65,7 @@ export default function AccountSettings() {
   const { currency, setCurrency, formatCurrency } = useCurrency();
   const [supportForm, setSupportForm] = useState({ subject: 'General Inquiry', message: '' });
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [myTickets, setMyTickets] = useState<any[]>([]);
   const { compareList, removeFromCompare } = useCompare();
 
   useEffect(() => {
@@ -161,7 +162,8 @@ export default function AccountSettings() {
         fetch("/api/payments").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setPayments(data) : null).catch(() => {}),
         fetch("/api/price-requests").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setPriceRequests(data.filter((d:any) => d.customer_email === email)) : null).catch(() => {}),
         fetch("/api/discounts").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setCoupons(data) : null).catch(() => {}),
-        fetch("/api/wishlist").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setWishlist(data) : null).catch(() => {})
+        fetch("/api/wishlist").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setWishlist(data) : null).catch(() => {}),
+        fetch("/api/support/user").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setMyTickets(data) : null).catch(() => {})
       ]);
 
       // Fetch dynamic rewards configuration
@@ -603,6 +605,8 @@ export default function AccountSettings() {
       if (res.ok) {
         alert("Support ticket submitted successfully! We will get back to you soon.");
         setSupportForm({ subject: 'General Inquiry', message: '' });
+        // Refresh tickets
+        fetch("/api/support/user").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setMyTickets(data) : null).catch(() => {});
       } else {
         alert("Failed to submit ticket.");
       }
@@ -646,6 +650,49 @@ export default function AccountSettings() {
       >
         {isSubmittingTicket ? "Submitting..." : "Submit Ticket"}
       </button>
+
+      {myTickets.length > 0 && (
+        <div style={{ marginTop: '40px' }}>
+          <h3 style={{ fontSize: '1.2rem', marginBottom: '16px', color: 'var(--text-primary)', fontWeight: 600 }}>My Tickets</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {myTickets.map(ticket => (
+              <div key={ticket.id} style={{ 
+                background: 'rgba(var(--text-primary-rgb), 0.02)', 
+                border: '1px solid rgba(var(--text-primary-rgb), 0.08)',
+                padding: '16px',
+                borderRadius: '8px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ticket.subject}</span>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: 600, 
+                    padding: '4px 8px', 
+                    borderRadius: '100px',
+                    backgroundColor: ticket.status === 'Open' ? 'rgba(59, 130, 246, 0.1)' : 
+                                     ticket.status === 'In Progress' ? 'rgba(245, 166, 35, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    color: ticket.status === 'Open' ? '#3b82f6' : 
+                           ticket.status === 'In Progress' ? '#f5a623' : '#10b981'
+                  }}>
+                    {ticket.status}
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>{ticket.message || "No description provided."}</p>
+                {ticket.admin_reply && (
+                  <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '12px', borderRadius: '6px', marginBottom: '8px', borderLeft: '3px solid #3b82f6' }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#3b82f6', marginBottom: '4px' }}>Admin Reply:</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>{ticket.admin_reply}</p>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  <span>Ticket ID: {ticket.id}</span>
+                  <span>{new Date(ticket.date).toLocaleDateString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 

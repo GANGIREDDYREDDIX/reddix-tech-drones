@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       customer_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
       customer_email: user.email,
       subject: subject,
+      message: message,
       status: 'Open',
       date: new Date().toISOString()
     };
@@ -50,5 +51,30 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Failed to create ticket:', error);
     return NextResponse.json({ error: 'Failed to create ticket' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { id, admin_reply, status } = await request.json();
+
+    if (!id) {
+      return NextResponse.json({ error: 'Ticket ID is required' }, { status: 400 });
+    }
+
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .update({ admin_reply, status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Failed to update ticket:', error);
+    return NextResponse.json({ error: 'Failed to update ticket' }, { status: 500 });
   }
 }

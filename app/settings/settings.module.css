@@ -422,16 +422,28 @@
 .saveBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  background: var(--accent-blue, #3b82f6);
-  color: var(--background-primary)fff;
-  border: none;
+  background: rgba(var(--text-primary-rgb), 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text-primary);
+  border: 1px solid rgba(var(--text-primary-rgb), 0.1);
   padding: 12px 24px;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.saveBtn:hover {
+  background: rgba(var(--text-primary-rgb), 0.06);
+  border-color: rgba(var(--text-primary-rgb), 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
 }
 
 .cardList {

@@ -44,11 +44,11 @@ export async function PUT(request: Request) {
     }
 
     // First check if a customer row exists for this user
-    const { data: existing, error: fetchError } = await supabase
+    const { data: existingRows, error: fetchError } = await supabase
       .from('customers')
-      .select('email')
+      .select('id, email')
       .eq('email', user.email)
-      .maybeSingle();
+      .order('joined_date', { ascending: false });
 
     if (fetchError) {
       console.error('Fetch error:', fetchError);
@@ -57,8 +57,8 @@ export async function PUT(request: Request) {
 
     let result;
 
-    if (!existing) {
-      // Row doesn't exist — create it first
+    if (!existingRows || existingRows.length === 0) {
+      // No row exists — create it
       const { data, error: insertError } = await supabase
         .from('customers')
         .insert({
@@ -69,7 +69,7 @@ export async function PUT(request: Request) {
           status: 'Active',
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (insertError) {
         console.error('Insert error:', insertError);
@@ -77,13 +77,14 @@ export async function PUT(request: Request) {
       }
       result = data;
     } else {
-      // Row exists — update it
+      // Use the first (most recent) row's id to avoid duplicate ambiguity
+      const primaryId = existingRows[0].id;
       const { data, error: updateError } = await supabase
         .from('customers')
         .update(updates)
-        .eq('email', user.email)
+        .eq('id', primaryId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (updateError) {
         console.error('Update error:', updateError);

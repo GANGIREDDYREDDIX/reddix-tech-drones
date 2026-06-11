@@ -1,29 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, CheckCircle2 } from "lucide-react";
 import styles from "./carts.module.css";
 import { useCurrency } from "@/context/CurrencyContext";
 
 interface Cart {
   id: string;
-  customerName: string;
+  customer_name: string;
   email: string;
-  total: number;
-  date: string;
-  items: string[];
+  value: number;
+  items_count: number;
+  time_abandoned: string;
   status: "Pending" | "Email Sent" | "Recovered";
 }
 
-const mockCarts: Cart[] = [
-  { id: "CART-892", customerName: "Elena R.", email: "elena@example.com", total: 1500, date: "2024-06-04T14:30:00Z", items: ["Reddix X1 Pro", "Pro Battery Pack"], status: "Pending" },
-  { id: "CART-891", customerName: "Marcus T.", email: "marcus.t@outlook.com", total: 550, date: "2024-06-03T09:15:00Z", items: ["Reddix Air Lite"], status: "Email Sent" },
-  { id: "CART-885", customerName: "Sarah J.", email: "sarah.j@gmail.com", total: 1750, date: "2024-06-01T18:45:00Z", items: ["Reddix X1 Pro", "ND Filters Set", "Hard Case"], status: "Recovered" }
-];
-
 export default function AbandonedCartsPage() {
-  const [carts, setCarts] = useState<Cart[]>(mockCarts);
-  const { formatCurrency, loading } = useCurrency();
+  const [carts, setCarts] = useState<Cart[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { formatCurrency, loading: currencyLoading } = useCurrency();
+
+  useEffect(() => {
+    fetch("/api/abandoned-carts")
+      .then(res => res.json())
+      .then(data => {
+        setCarts(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleSendEmail = (id: string) => {
     setCarts(carts.map(c => c.id === id ? { ...c, status: "Email Sent" } : c));
@@ -52,22 +60,20 @@ export default function AbandonedCartsPage() {
             </tr>
           </thead>
           <tbody>
-            {carts.map(cart => (
+            {loading ? (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>Loading abandoned carts...</td></tr>
+            ) : carts.length === 0 ? (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>No abandoned carts found</td></tr>
+            ) : carts.map(cart => (
               <tr key={cart.id}>
                 <td style={{ fontWeight: 600 }}>{cart.id}</td>
                 <td>
-                  <div className={styles.customerName}>{cart.customerName}</div>
+                  <div className={styles.customerName}>{cart.customer_name}</div>
                   <div className={styles.customerEmail}>{cart.email}</div>
                 </td>
-                <td>{new Date(cart.date).toLocaleString()}</td>
-                <td>
-                  <div className={styles.itemsList}>
-                    {cart.items.map((item, i) => (
-                      <span key={i}>• {item}</span>
-                    ))}
-                  </div>
-                </td>
-                <td className={styles.textRight}>{!loading ? formatCurrency(cart.total) : "..."}</td>
+                <td>{cart.time_abandoned}</td>
+                <td>{cart.items_count} items</td>
+                <td className={styles.textRight}>{!currencyLoading ? formatCurrency(cart.value) : "..."}</td>
                 <td>
                   <span className={`${styles.statusBadge} ${
                     cart.status === "Recovered" ? styles.badgeRecovered :

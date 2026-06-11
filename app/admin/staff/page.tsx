@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserPlus, ShieldAlert } from "lucide-react";
 import styles from "./staff.module.css";
 
@@ -10,20 +10,28 @@ interface Staff {
   email: string;
   role: "Super Admin" | "Support Agent" | "Inventory Manager";
   status: "Active" | "Suspended";
-  lastLogin: string;
+  last_login: string;
 }
 
-const mockStaff: Staff[] = [
-  { id: "STAFF-01", name: "Alice Admin", email: "alice@reddix.tech", role: "Super Admin", status: "Active", lastLogin: "2024-06-05T01:30:00Z" },
-  { id: "STAFF-02", name: "Bob Support", email: "bob@reddix.tech", role: "Support Agent", status: "Active", lastLogin: "2024-06-04T12:00:00Z" },
-  { id: "STAFF-03", name: "Charlie Stock", email: "charlie@reddix.tech", role: "Inventory Manager", status: "Active", lastLogin: "2024-06-04T09:15:00Z" },
-  { id: "STAFF-04", name: "David Temp", email: "david@reddix.tech", role: "Support Agent", status: "Suspended", lastLogin: "2024-05-20T16:45:00Z" },
-];
-
 export default function StaffPage() {
-  const [staffList, setStaffList] = useState<Staff[]>(mockStaff);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/staff")
+      .then(res => res.json())
+      .then(data => {
+        setStaffList(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleRoleChange = (id: string, newRole: string) => {
+    // Optimistic UI update. In a real app, make a PUT request.
     setStaffList(staffList.map(s => s.id === id ? { ...s, role: newRole as Staff["role"] } : s));
   };
 
@@ -50,7 +58,11 @@ export default function StaffPage() {
             </tr>
           </thead>
           <tbody>
-            {staffList.map(staff => (
+            {loading ? (
+              <tr><td colSpan={4} style={{ textAlign: "center", padding: "24px" }}>Loading staff...</td></tr>
+            ) : staffList.length === 0 ? (
+              <tr><td colSpan={4} style={{ textAlign: "center", padding: "24px" }}>No staff found</td></tr>
+            ) : staffList.map(staff => (
               <tr key={staff.id}>
                 <td>
                   <div className={styles.staffInfo}>
@@ -83,7 +95,7 @@ export default function StaffPage() {
                   </span>
                 </td>
                 <td className={styles.textRight}>
-                  {new Date(staff.lastLogin).toLocaleString()}
+                  {new Date(staff.last_login).toLocaleString()}
                 </td>
               </tr>
             ))}

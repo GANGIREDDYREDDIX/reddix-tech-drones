@@ -1,28 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { MessageSquare } from "lucide-react";
 import styles from "./support.module.css";
 
 interface Ticket {
   id: string;
-  customerName: string;
-  email: string;
+  customer_name: string;
+  customer_email: string;
   subject: string;
-  message: string;
-  priority: "High" | "Normal" | "Low";
   status: "Open" | "In Progress" | "Closed";
+  priority: "High" | "Medium" | "Low";
   date: string;
 }
 
-const mockTickets: Ticket[] = [
-  { id: "TKT-1042", customerName: "Diana W.", email: "diana.w@gmail.com", subject: "Drone battery not holding charge", message: "Hi, I just received my order yesterday but the battery drains completely after 5 minutes of flight. Is this defective?", priority: "High", status: "Open", date: "2024-06-05T08:30:00Z" },
-  { id: "TKT-1041", customerName: "John D.", email: "john@example.com", subject: "Where is my order?", message: "Tracking says delivered but I haven't received it yet.", priority: "High", status: "In Progress", date: "2024-06-04T16:15:00Z" },
-  { id: "TKT-1038", customerName: "Global Media", email: "billing@globalmedia.net", subject: "Invoice request for Order ORD-004", message: "Could you please send the B2B invoice with our GST number attached?", priority: "Normal", status: "Open", date: "2024-06-03T11:20:00Z" },
-  { id: "TKT-1020", customerName: "Sarah Smith", email: "sarah.s@gmail.com", subject: "Thanks for the quick replacement!", message: "Just wanted to say thanks for sending the replacement props so fast.", priority: "Low", status: "Closed", date: "2024-05-28T14:00:00Z" }
-];
-
 export default function SupportPage() {
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/support")
+      .then(res => res.json())
+      .then(data => {
+        setTickets(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   const handleStatusChange = (id: string, newStatus: string) => {
     setTickets(tickets.map(t => t.id === id ? { ...t, status: newStatus as Ticket["status"] } : t));
@@ -33,7 +40,7 @@ export default function SupportPage() {
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>Support Tickets</h1>
-          <p className={styles.subtitle}>Manage customer inquiries, returns, and support requests.</p>
+          <p className={styles.subtitle}>Manage customer inquiries and support requests.</p>
         </div>
       </div>
 
@@ -43,33 +50,38 @@ export default function SupportPage() {
             <tr>
               <th>Ticket ID</th>
               <th>Customer</th>
-              <th>Subject & Message</th>
-              <th>Date</th>
+              <th>Subject</th>
               <th>Priority</th>
-              <th className={styles.textRight}>Status</th>
+              <th>Status</th>
+              <th className={styles.textRight}>Date</th>
+              <th className={styles.textRight}>Action</th>
             </tr>
           </thead>
           <tbody>
-            {tickets.map(ticket => (
+            {loading ? (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>Loading support tickets...</td></tr>
+            ) : tickets.length === 0 ? (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>No support tickets found</td></tr>
+            ) : tickets.map(ticket => (
               <tr key={ticket.id}>
-                <td style={{ fontWeight: 600 }}>{ticket.id}</td>
                 <td>
-                  <div className={styles.customerName}>{ticket.customerName}</div>
-                  <div className={styles.customerEmail}>{ticket.email}</div>
+                  <span className={styles.ticketId}>{ticket.id}</span>
                 </td>
                 <td>
-                  <div className={styles.subject}>{ticket.subject}</div>
-                  <div className={styles.messagePreview}>{ticket.message}</div>
+                  <div className={styles.customerInfo}>
+                    <span className={styles.customerName}>{ticket.customer_name}</span>
+                    <span className={styles.customerEmail}>{ticket.customer_email}</span>
+                  </div>
                 </td>
-                <td>{new Date(ticket.date).toLocaleDateString()}</td>
+                <td>{ticket.subject}</td>
                 <td>
                   <span className={`${styles.priorityBadge} ${styles[`priority${ticket.priority}`]}`}>
                     {ticket.priority}
                   </span>
                 </td>
-                <td className={styles.textRight}>
+                <td>
                   <select 
-                    className={styles.statusSelect}
+                    className={`${styles.statusSelect} ${styles[`status${ticket.status.replace(" ", "")}`]}`}
                     value={ticket.status}
                     onChange={(e) => handleStatusChange(ticket.id, e.target.value)}
                   >
@@ -77,6 +89,14 @@ export default function SupportPage() {
                     <option value="In Progress">In Progress</option>
                     <option value="Closed">Closed</option>
                   </select>
+                </td>
+                <td className={styles.textRight}>
+                  {new Date(ticket.date).toLocaleDateString()}
+                </td>
+                <td className={styles.actionsCell}>
+                  <button className={styles.actionBtn}>
+                    <MessageSquare size={16} /> Reply
+                  </button>
                 </td>
               </tr>
             ))}

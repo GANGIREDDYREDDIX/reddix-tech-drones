@@ -1,31 +1,39 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { FileText, Send, Check, X } from "lucide-react";
 import styles from "../dashboard.module.css";
-import { FileText, Check, X, Clock } from "lucide-react";
+
+interface Request {
+  id: string;
+  product: string;
+  customer_name: string;
+  company: string;
+  quantity: number;
+  status: "Pending" | "Quoted" | "Accepted" | "Rejected";
+  date: string;
+}
 
 export default function PriceRequestsAdmin() {
-  const mockRequests = [
-    {
-      id: "REQ-001",
-      customer: "Tech Corp Inc.",
-      product: "Reddix Pro X1 Drone",
-      quantity: 10,
-      requestedPrice: 20000,
-      standardPrice: 24990,
-      status: "pending",
-      date: "Oct 12, 2026"
-    },
-    {
-      id: "REQ-002",
-      customer: "Sarah Smith",
-      product: "Reddix Thermal IR",
-      quantity: 5,
-      requestedPrice: 25000,
-      standardPrice: 27495,
-      status: "approved",
-      date: "Oct 10, 2026"
-    }
-  ];
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/price-requests")
+      .then((res) => res.json())
+      .then((data) => {
+        setRequests(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setRequests(requests.map(r => r.id === id ? { ...r, status: newStatus as Request["status"] } : r));
+  };
 
   return (
     <div className={styles.dashboard}>
@@ -37,38 +45,43 @@ export default function PriceRequestsAdmin() {
       <div className={styles.dashboardContent}>
         <div className={styles.activityCard} style={{ gridColumn: '1 / -1' }}>
           <div className={styles.activityList}>
-            {mockRequests.map((req) => (
+            {loading ? (
+              <div style={{ padding: '24px', textAlign: 'center' }}>Loading...</div>
+            ) : requests.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center' }}>No requests found</div>
+            ) : requests.map((req) => (
               <div key={req.id} className={styles.activityItem} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr 1fr 1fr', gap: '16px', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{req.id}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{req.date}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{new Date(req.date).toLocaleDateString()}</div>
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{req.product}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{req.customer} • Qty: {req.quantity}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{req.customer_name} • Qty: {req.quantity}</div>
                 </div>
                 <div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>${req.requestedPrice.toLocaleString()}</div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Standard: ${req.standardPrice.toLocaleString()}</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{req.company || "No Company"}</div>
                 </div>
                 <div>
-                  <span className={`${styles.statusBadge} ${styles[req.status]}`} style={{
-                    background: req.status === 'pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                    color: req.status === 'pending' ? '#f59e0b' : '#10b981'
+                  <span className={`${styles.statusBadge}`} style={{
+                    background: req.status === 'Pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    color: req.status === 'Pending' ? '#f59e0b' : '#10b981',
+                    padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600
                   }}>
                     {req.status.toUpperCase()}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  {req.status === 'pending' && (
-                    <>
-                      <button style={{ padding: '6px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: 'none', borderRadius: '4px', cursor: 'pointer' }}><Check size={16} /></button>
-                      <button style={{ padding: '6px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: 'none', borderRadius: '4px', cursor: 'pointer' }}><X size={16} /></button>
-                    </>
-                  )}
-                  {req.status !== 'pending' && (
-                    <button style={{ padding: '6px 12px', background: 'var(--background-secondary)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem' }}>View Details</button>
-                  )}
+                  <select 
+                    value={req.status}
+                    onChange={(e) => handleStatusChange(req.id, e.target.value)}
+                    style={{ padding: '6px', background: 'var(--background-secondary)', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '4px' }}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="Quoted">Quoted</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Rejected">Rejected</option>
+                  </select>
                 </div>
               </div>
             ))}

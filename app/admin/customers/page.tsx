@@ -1,19 +1,47 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Mail, Edit2, Ban } from "lucide-react";
 import styles from "./customers.module.css";
 import { useCurrency } from "@/context/CurrencyContext";
 
-const MOCK_CUSTOMERS = [
-  { id: "CUS-102", name: "John Doe", email: "john@example.com", totalOrders: 4, spent: 9996, status: "Active", joined: "Jan 12, 2024", color: "linear-gradient(135deg, #FF6B6B, #EE5D5D)" },
-  { id: "CUS-103", name: "Tech Corp", email: "procurement@techcorp.io", totalOrders: 12, spent: 32994, status: "Active", joined: "Feb 04, 2024", color: "linear-gradient(135deg, #4D96FF, #2B7FFF)" },
-  { id: "CUS-104", name: "Sarah Smith", email: "sarah.s@gmail.com", totalOrders: 1, spent: 449, status: "Active", joined: "Mar 18, 2024", color: "linear-gradient(135deg, #6BCB77, #4FB95B)" },
-  { id: "CUS-105", name: "Global Media", email: "billing@globalmedia.net", totalOrders: 8, spent: 1192, status: "Active", joined: "May 22, 2024", color: "linear-gradient(135deg, #FFD93D, #F4C71B)" },
-  { id: "CUS-106", name: "Alex Mercer", email: "alex.m@outlook.com", totalOrders: 0, spent: 0, status: "Inactive", joined: "Oct 15, 2024", color: "linear-gradient(135deg, #9D9D9D, #7A7A7A)" },
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  total_orders: number;
+  total_spent: number;
+  status: string;
+  joined_date: string;
+}
+
+const colors = [
+  "linear-gradient(135deg, #FF6B6B, #EE5D5D)",
+  "linear-gradient(135deg, #4D96FF, #2B7FFF)",
+  "linear-gradient(135deg, #6BCB77, #4FB95B)",
+  "linear-gradient(135deg, #FFD93D, #F4C71B)",
+  "linear-gradient(135deg, #9D9D9D, #7A7A7A)"
 ];
+const getColor = (str: string) => colors[str.length % colors.length];
 
 export default function AdminCustomers() {
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(true);
   const { formatCurrency, loading } = useCurrency();
+
+  useEffect(() => {
+    fetch("/api/customers")
+      .then(res => res.json())
+      .then(data => {
+        setCustomers(data);
+        setLoadingCustomers(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoadingCustomers(false);
+      });
+  }, []);
+
   return (
     <div className={styles.container}>
       <div className={styles.headerRow}>
@@ -36,11 +64,15 @@ export default function AdminCustomers() {
             </tr>
           </thead>
           <tbody>
-            {MOCK_CUSTOMERS.map(customer => (
+            {loadingCustomers ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "24px" }}>Loading customers...</td></tr>
+            ) : customers.length === 0 ? (
+              <tr><td colSpan={6} style={{ textAlign: "center", padding: "24px" }}>No customers found</td></tr>
+            ) : customers.map(customer => (
               <tr key={customer.id}>
                 <td>
                   <div className={styles.customerCell}>
-                    <div className={styles.customerAvatar} style={{ background: customer.color }}>
+                    <div className={styles.customerAvatar} style={{ background: getColor(customer.name) }}>
                       {customer.name.charAt(0)}
                     </div>
                     <div className={styles.customerInfo}>
@@ -54,9 +86,9 @@ export default function AdminCustomers() {
                     {customer.status}
                   </span>
                 </td>
-                <td className={styles.textRight}>{customer.totalOrders}</td>
-                <td className={styles.textRight} style={{fontWeight: 600}}>{!loading ? formatCurrency(customer.spent) : "..."}</td>
-                <td>{customer.joined}</td>
+                <td className={styles.textRight}>{customer.total_orders}</td>
+                <td className={styles.textRight} style={{fontWeight: 600}}>{!loading ? formatCurrency(customer.total_spent) : "..."}</td>
+                <td>{new Date(customer.joined_date).toLocaleDateString()}</td>
                 <td className={styles.actionsCell}>
                   <button className={styles.iconBtn} title="Email Customer">
                     <Mail size={16} />

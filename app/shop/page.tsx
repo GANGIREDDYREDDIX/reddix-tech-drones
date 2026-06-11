@@ -79,6 +79,7 @@ export default function Shop() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: reviewProduct.id,
+          productName: reviewProduct.name,
           rating: reviewForm.rating,
           customerName: reviewForm.customerName,
           text: reviewForm.text

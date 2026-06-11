@@ -27,6 +27,35 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       throw error;
     }
 
+    // When a review is Approved, recalculate the product's rating and reviewCount
+    if (body.status === 'Approved' && data.product_id) {
+      try {
+        const { data: approvedReviews } = await supabase
+          .from('reviews')
+          .select('rating')
+          .eq('product_id', data.product_id)
+          .eq('status', 'Approved');
+
+        if (approvedReviews && approvedReviews.length > 0) {
+          const avgRating = approvedReviews.reduce((sum, r) => sum + r.rating, 0) / approvedReviews.length;
+          const roundedRating = Math.round(avgRating * 10) / 10;
+
+          await supabase
+            .from('products')
+            .update({
+              rating: roundedRating,
+              reviewCount: approvedReviews.length
+            })
+            .eq('id', data.product_id);
+          
+          console.log(`Updated product ${data.product_id}: rating=${roundedRating}, reviewCount=${approvedReviews.length}`);
+        }
+      } catch (recalcError) {
+        // Don't fail the review update if product recalc fails
+        console.error('Failed to recalculate product rating:', recalcError);
+      }
+    }
+
     const updatedReview = {
       id: data.id,
       productId: data.product_id,

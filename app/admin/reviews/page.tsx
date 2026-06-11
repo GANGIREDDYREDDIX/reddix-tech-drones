@@ -23,7 +23,8 @@ export default function ReviewsPage() {
 
   const fetchReviews = async () => {
     try {
-      const res = await fetch("/api/reviews");
+      // Pass ?all=true so admin sees Pending + Approved + Rejected
+      const res = await fetch("/api/reviews?all=true");
       const data = await res.json();
       setReviews(data);
     } catch (e) {

@@ -1,18 +1,28 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
-    const { data: reviews, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const showAll = searchParams.get('all') === 'true';
+
+    let query = supabase
       .from('reviews')
       .select('*')
       .order('date', { ascending: false });
 
+    // Public shop only sees Approved reviews; admin passes ?all=true
+    if (!showAll) {
+      query = query.eq('status', 'Approved');
+    }
+
+    const { data: reviews, error } = await query;
+
     if (error) throw error;
     
     // Map database fields back to camelCase as expected by frontend
-    const formattedReviews = reviews.map(r => ({
+    const formattedReviews = (reviews || []).map(r => ({
       id: r.id,
       productId: r.product_id,
       productName: r.product_name,

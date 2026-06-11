@@ -1,77 +1,34 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
-
-type CurrencyCode = "INR" | "USD" | "EUR" | "GBP" | "AUD" | "CAD";
+import React, { createContext, useContext } from "react";
 
 interface CurrencyContextType {
-  currency: CurrencyCode;
-  setCurrency: (c: CurrencyCode) => void;
-  formatCurrency: (amountInUSD: number) => string;
-  rates: Record<string, number> | null;
-  loading: boolean;
+  currency: string;
+  setCurrency: (c: string) => void;
+  formatCurrency: (amount: number) => string;
+  rates: null;
+  loading: false;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
-  INR: "₹",
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  AUD: "A$",
-  CAD: "C$"
-};
-
-const LOCALES: Record<CurrencyCode, string> = {
-  INR: "en-IN",
-  USD: "en-US",
-  EUR: "de-DE",
-  GBP: "en-GB",
-  AUD: "en-AU",
-  CAD: "en-CA"
-};
-
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrency] = useState<CurrencyCode>("INR");
-  const [rates, setRates] = useState<Record<string, number> | null>(null);
-  const [loading, setLoading] = useState(true);
+  // INR is the only currency — prices in DB are already in INR
+  const formatCurrency = (amount: number): string => {
+    return `₹${amount.toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
 
-  useEffect(() => {
-    // Fetch live exchange rates base USD
-    fetch("https://api.exchangerate-api.com/v4/latest/USD")
-      .then(res => res.json())
-      .then(data => {
-        setRates(data.rates);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to fetch exchange rates:", err);
-        // Fallback static rates just in case API fails
-        setRates({
-          USD: 1,
-          INR: 83.5,
-          EUR: 0.92,
-          GBP: 0.79,
-          AUD: 1.5,
-          CAD: 1.36
-        });
-        setLoading(false);
-      });
-  }, []);
-
-  const formatCurrency = (amountInUSD: number) => {
-    if (!rates) return `...`;
-    const rate = rates[currency] || 1;
-    const converted = amountInUSD * rate;
-    const symbol = CURRENCY_SYMBOLS[currency];
-    const locale = LOCALES[currency];
-    
-    return `${symbol}${converted.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const setCurrency = (_c: string) => {
+    // No-op: currency is fixed to INR
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, formatCurrency, rates, loading }}>
+    <CurrencyContext.Provider
+      value={{ currency: "INR", setCurrency, formatCurrency, rates: null, loading: false }}
+    >
       {children}
     </CurrencyContext.Provider>
   );

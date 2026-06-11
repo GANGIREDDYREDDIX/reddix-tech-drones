@@ -24,7 +24,7 @@ export default function AccountSettings() {
     name: "",
     email: "",
     phone: "",
-    currency: "USD",
+    currency: "INR",
     language: "en",
     email_orders: true,
     email_offers: false,
@@ -110,12 +110,12 @@ export default function AccountSettings() {
             ...p,
             name: dbName,
             phone: customer.phone || "",
-            currency: customer.currency || "USD",
+            currency: "INR",
             language: customer.language || "en",
             email_orders: customer.email_orders ?? true,
             email_offers: customer.email_offers ?? false
           }));
-          if (customer.currency) setCurrency(customer.currency);
+          // Currency is now fixed to INR, no need to update context
         }
       } catch (e) {
         console.error("Error fetching customer data:", e);
@@ -403,15 +403,9 @@ export default function AccountSettings() {
       <h2 className={styles.tabTitle}>Preferences</h2>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Currency</label>
-        <select className={styles.selectInput} value={profile.currency.toLowerCase()} onChange={(e) => {
-          setProfile(p => ({...p, currency: e.target.value.toUpperCase()}));
-          setCurrency(e.target.value.toUpperCase() as any);
-        }}>
-          <option value="usd">USD ($)</option>
-          <option value="eur">EUR (€)</option>
-          <option value="gbp">GBP (£)</option>
-          <option value="inr">INR (₹)</option>
-        </select>
+        <div className={styles.selectInput} style={{ display: 'flex', alignItems: 'center', color: 'var(--text-primary)', cursor: 'not-allowed', opacity: 0.7 }}>
+          ₹ INR — Indian Rupee (Default)
+        </div>
       </div>
       <div className={styles.formGroup}>
         <label className={styles.inputLabel}>Language</label>
@@ -605,7 +599,7 @@ export default function AccountSettings() {
       <div style={{ background: 'var(--background-secondary)', padding: '24px', borderRadius: '12px', border: '1px solid var(--nav-border)' }}>
         <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', marginBottom: '16px' }}>How to earn more?</h3>
         <ul style={{ color: 'var(--text-secondary)', paddingLeft: '20px', lineHeight: 1.8 }}>
-          <li>Earn {rewardsConfig.purchases_multiplier} point{rewardsConfig.purchases_multiplier !== 1 ? 's' : ''} for every 100 {currency} spent on our store.</li>
+          <li>Earn {rewardsConfig.purchases_multiplier} point{rewardsConfig.purchases_multiplier !== 1 ? 's' : ''} for every ₹100 spent on our store.</li>
           <li>Leave a product review ({rewardsConfig.review_points} points).</li>
           <li>Refer a friend ({rewardsConfig.referral_points} points).</li>
         </ul>

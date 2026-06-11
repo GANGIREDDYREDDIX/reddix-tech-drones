@@ -68,9 +68,9 @@ export default function AccountSettings() {
         // This prevents .single() from crashing on duplicate rows
         const { data: customers, error } = await supabase
           .from('customers')
-          .select('id, points_issued, points_redeemed, referral_code, phone, currency, language, email_orders, email_offers')
+          .select('id, name, points_issued, points_redeemed, referral_code, phone, currency, language, email_orders, email_offers')
           .eq('email', email)
-          .order('joined_date', { ascending: false })
+          .order('joined_date', { ascending: false, nullsFirst: false })
           .limit(1);
 
         const customer = customers && customers.length > 0 ? customers[0] : null;
@@ -104,8 +104,11 @@ export default function AccountSettings() {
         } else {
           points = (customer.points_issued || 0) - (customer.points_redeemed || 0);
           referralCode = customer.referral_code || "";
+          // Use the name saved in DB; fall back to auth metadata only if DB has no name
+          const dbName = customer.name || name;
           setProfile(p => ({
-            ...p, 
+            ...p,
+            name: dbName,
             phone: customer.phone || "",
             currency: customer.currency || "USD",
             language: customer.language || "en",
@@ -118,7 +121,8 @@ export default function AccountSettings() {
         console.error("Error fetching customer data:", e);
       }
       
-      setProfile(p => ({ ...p, name, email, points, referralCode }));
+      // Only set email, points, referralCode here — name is set above from DB
+      setProfile(p => ({ ...p, email, points, referralCode }));
 
       // Fetch dynamic arrays
       Promise.all([

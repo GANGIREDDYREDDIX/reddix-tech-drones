@@ -12,7 +12,7 @@ function CustomerAuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   
   // Auth methods
-  const [authMethod, setAuthMethod] = useState<"email" | "phone">("phone");
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [phoneStep, setPhoneStep] = useState<"input" | "otp">("input");
 
   const [email, setEmail] = useState("");
@@ -213,26 +213,8 @@ function CustomerAuthForm() {
 
         <div className={styles.divider}>or</div>
 
-        {isLogin && (
-          <div className={styles.tabs} style={{ padding: '2px', marginBottom: '20px' }}>
-            <button 
-              className={`${styles.tabBtn} ${authMethod === "phone" ? styles.active : ""}`}
-              onClick={() => { setAuthMethod("phone"); setError(""); }}
-              type="button"
-              style={{ fontSize: '0.85rem', padding: '6px 0' }}
-            >
-              Phone Number
-            </button>
-            <button 
-              className={`${styles.tabBtn} ${authMethod === "email" ? styles.active : ""}`}
-              onClick={() => { setAuthMethod("email"); setError(""); }}
-              type="button"
-              style={{ fontSize: '0.85rem', padding: '6px 0' }}
-            >
-              Email
-            </button>
-          </div>
-        )}
+        {/* Phone OTP Login has been temporarily hidden here. 
+            Set authMethod to 'email' by default to use standard auth. */}
 
         {authMethod === "phone" && isLogin ? (
           <form onSubmit={handlePhoneSubmit} className={styles.form}>

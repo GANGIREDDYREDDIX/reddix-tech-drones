@@ -82,6 +82,33 @@ function CustomerAuthForm() {
     }
   };
 
+  const [resetMessage, setResetMessage] = useState("");
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError("Please enter your email address to reset password.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setResetMessage("");
+    const supabase = createClient();
+
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      });
+      if (resetError) throw resetError;
+      
+      setResetMessage("Password reset link sent! Check your email.");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset link.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleStandardAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || (!isLogin && !name)) return;
@@ -312,13 +339,27 @@ function CustomerAuthForm() {
                 className={styles.input}
                 disabled={loading}
                 minLength={6}
-                required
+                required={!resetMessage}
               />
             </div>
             
+            {isLogin && (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-10px', marginBottom: '15px' }}>
+                <button 
+                  type="button" 
+                  onClick={handleForgotPassword}
+                  style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', fontSize: '0.85rem', cursor: 'pointer', padding: 0 }}
+                  disabled={loading}
+                >
+                  Forgot your password?
+                </button>
+              </div>
+            )}
+            
             {error && <p className={styles.error}>{error}</p>}
+            {resetMessage && <p className={styles.success} style={{ color: '#10b981', fontSize: '0.85rem', textAlign: 'center', marginBottom: '15px' }}>{resetMessage}</p>}
 
-            <button type="submit" className={styles.submitBtn} disabled={loading || !email || !password}>
+            <button type="submit" className={styles.submitBtn} disabled={loading || !email || (!password && !resetMessage)}>
               {loading ? "Processing..." : (isLogin ? "Log In" : "Create Account")}
               {!loading && <ArrowRight size={18} />}
             </button>

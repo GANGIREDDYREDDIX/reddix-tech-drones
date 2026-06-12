@@ -32,10 +32,10 @@ function getCartSessionId(): string {
   return id;
 }
 
-async function syncAbandonedCart(items: CartItem[]) {
+async function syncAbandonedCart(items: CartItem[], explicitSessionId?: string | null) {
   if (items.length === 0) {
     // Cart is empty — remove any existing abandoned cart record for this session
-    const sessionId = localStorage.getItem("aero_cart_session_id");
+    const sessionId = explicitSessionId || localStorage.getItem("aero_cart_session_id");
     if (!sessionId) return;
     try {
       await fetch("/api/abandoned-carts", {
@@ -154,9 +154,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearCart = () => {
+    // Grab session ID before clearing
+    const sessionId = localStorage.getItem("aero_cart_session_id");
     setItems([]);
     // Remove the session ID so a fresh cart gets a new ID next time
     localStorage.removeItem("aero_cart_session_id");
+    // Explicitly sync the empty state with the old session ID to ensure deletion
+    if (sessionId) {
+      syncAbandonedCart([], sessionId);
+    }
   };
 
   const cartTotal = items.reduce((total, item) => total + item.price * item.quantity, 0);

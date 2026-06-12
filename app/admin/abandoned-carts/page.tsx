@@ -21,7 +21,7 @@ export default function AbandonedCartsPage() {
   const { formatCurrency } = useCurrency();
 
   useEffect(() => {
-    fetch("/api/abandoned-carts")
+    fetch(`/api/abandoned-carts?t=${Date.now()}`, { cache: "no-store" })
       .then(res => res.json())
       .then(data => {
         if (data.error) {

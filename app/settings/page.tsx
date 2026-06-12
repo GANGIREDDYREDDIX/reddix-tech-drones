@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Package, MapPin, User, FileText, 
   Heart, Scale, Ticket, HeadphonesIcon, FileOutput, 
-  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X
+  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X, Copy, Check
 } from "lucide-react";
 import styles from "./settings.module.css";
 import { createClient } from "@/utils/supabase/client";
@@ -37,6 +37,7 @@ export default function AccountSettings() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [copied, setCopied] = useState(false);
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -723,8 +724,17 @@ export default function AccountSettings() {
         <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '24px', borderRadius: '12px', border: '1px dashed #f59e0b', marginBottom: '24px', textAlign: 'center' }}>
           <h3 style={{ fontSize: '1rem', color: '#f59e0b', marginBottom: '8px' }}>Your Unique Referral Code</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>Share this code with friends. When they register using it, you both get rewarded!</p>
-          <div style={{ display: 'inline-block', background: 'var(--background-primary)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '3px', userSelect: 'all' }}>
+          <div 
+            onClick={() => {
+              navigator.clipboard.writeText(profile.referralCode);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '12px', background: 'var(--background-primary)', padding: '12px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '3px', cursor: 'pointer', transition: 'all 0.2s' }}
+            title="Click to copy"
+          >
             {profile.referralCode}
+            {copied ? <Check size={20} color="#10b981" /> : <Copy size={20} color="var(--text-secondary)" />}
           </div>
         </div>
       )}

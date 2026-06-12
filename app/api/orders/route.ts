@@ -68,11 +68,25 @@ export async function POST(request: Request) {
       }
     }
 
+    // We calculate points earned here, but only award them when status is Delivered
+    let pointsToAdd = 0;
+    try {
+      const { data: config } = await supabase.from('rewards_config').select('purchases_multiplier').eq('id', 'default').single();
+      const multiplier = config ? config.purchases_multiplier : 1;
+      pointsToAdd = Math.floor(dynamicTotal / 100) * multiplier;
+    } catch(e) {
+      console.error("Failed to calculate points earned", e);
+    }
+
     const newOrder = {
       id: `ORD-${Math.floor(Math.random() * 100000)}`,
       customer: {
         name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
-        email: user.email
+        email: user.email,
+        points_earned: pointsToAdd,
+        points_redeemed: validRedeemedPoints,
+        points_awarded: false,
+        points_refunded: false
       },
       date: new Date().toISOString(),
       status: 'Pending',
@@ -88,25 +102,18 @@ export async function POST(request: Request) {
 
     if (error) throw error;
     
-    // Reward Points calculation
-    try {
-      const { data: config } = await supabase.from('rewards_config').select('*').eq('id', 'default').single();
-      const multiplier = config ? config.purchases_multiplier : 1;
-      const pointsToAdd = Math.floor(dynamicTotal / 100) * multiplier; // Calculate points on the subtotal before discount
-      
-      if (pointsToAdd > 0 || validRedeemedPoints > 0) {
-        const { data: customer } = await supabase.from('customers').select('points_issued, points_redeemed').eq('email', user.email).single();
+    // Only deduct redeemed points here. Earned points are awarded via status update to Delivered.
+    if (validRedeemedPoints > 0) {
+      try {
+        const { data: customer } = await supabase.from('customers').select('points_redeemed').eq('email', user.email).single();
         if (customer) {
            await supabase.from('customers')
-             .update({ 
-               points_issued: (customer.points_issued || 0) + pointsToAdd,
-               points_redeemed: (customer.points_redeemed || 0) + validRedeemedPoints
-             })
+             .update({ points_redeemed: (customer.points_redeemed || 0) + validRedeemedPoints })
              .eq('email', user.email);
         }
+      } catch(e) {
+        console.error("Failed to deduct redeemed points", e);
       }
-    } catch(e) {
-      console.error("Failed to add points", e);
     }
 
     return NextResponse.json(data, { status: 201 });

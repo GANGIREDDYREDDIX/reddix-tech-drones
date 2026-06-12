@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Package, MapPin, User, FileText, 
   Heart, Scale, Ticket, HeadphonesIcon, FileOutput, 
-  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X, Copy, Check
+  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X, Copy, Check, Clock
 } from "lucide-react";
 import styles from "./settings.module.css";
 import { createClient } from "@/utils/supabase/client";
@@ -48,6 +48,7 @@ export default function AccountSettings() {
     email_orders: true,
     email_offers: false,
     points: 0,
+    pendingPoints: 0,
     referralCode: "",
   });
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -164,7 +165,19 @@ export default function AccountSettings() {
         fetch("/api/price-requests").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setPriceRequests(data.filter((d:any) => d.customer_email === email)) : null).catch(() => {}),
         fetch("/api/discounts").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setCoupons(data) : null).catch(() => {}),
         fetch("/api/wishlist").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setWishlist(data) : null).catch(() => {}),
-        fetch("/api/support/user").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setMyTickets(data) : null).catch(() => {})
+        fetch("/api/support/user").then(r => r.ok ? r.json() : []).then(data => Array.isArray(data) ? setMyTickets(data) : null).catch(() => {}),
+        fetch("/api/orders").then(r => r.ok ? r.json() : []).then(data => {
+          if (Array.isArray(data)) {
+            const userOrders = data.filter((o: any) => o.customer?.email === email);
+            let pending = 0;
+            userOrders.forEach((o: any) => {
+              if (['Pending', 'Processing', 'Shipped'].includes(o.status) && o.customer?.points_earned && !o.customer?.points_awarded) {
+                pending += o.customer.points_earned;
+              }
+            });
+            setProfile(p => ({ ...p, pendingPoints: pending }));
+          }
+        }).catch(() => {})
       ]);
 
       // Fetch dynamic rewards configuration
@@ -718,6 +731,13 @@ export default function AccountSettings() {
         <Coins size={64} color="#f59e0b" style={{ marginBottom: '16px' }} />
         <h2 style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{profile.points.toLocaleString()}</h2>
         <p style={{ color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Available Reddix Points</p>
+        
+        {profile.pendingPoints > 0 && (
+          <div style={{ marginTop: '16px', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(245, 158, 11, 0.1)', padding: '8px 16px', borderRadius: '20px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+            <Clock size={16} color="#f59e0b" />
+            <span style={{ color: '#f59e0b', fontWeight: 600, fontSize: '0.9rem' }}>{profile.pendingPoints.toLocaleString()} points on the way!</span>
+          </div>
+        )}
       </div>
 
       {profile.referralCode && (

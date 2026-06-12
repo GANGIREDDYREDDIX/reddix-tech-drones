@@ -8,14 +8,22 @@ import { useCurrency } from "@/context/CurrencyContext";
 
 export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState<{ kpis: any, chartData: any[], recentOrders?: any[], lowStock?: any[] } | null>(null);
+  const [timeRange, setTimeRange] = useState("7d");
   const { formatCurrency, loading } = useCurrency();
 
   useEffect(() => {
-    fetch("/api/analytics")
+    fetch(`/api/analytics?range=${timeRange}`)
       .then(res => res.json())
       .then(data => setAnalytics(data))
       .catch(console.error);
-  }, []);
+  }, [timeRange]);
+
+  const compactFormatter = (val: number) => {
+    if (val >= 10000000) return `₹${(val / 10000000).toFixed(1)}Cr`;
+    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+    if (val >= 1000) return `₹${(val / 1000).toFixed(1)}K`;
+    return `₹${val}`;
+  };
 
   return (
     <div className={styles.dashboard}>
@@ -78,10 +86,14 @@ export default function AdminDashboard() {
         <div className={styles.chartCard} style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <h2>Revenue Overview</h2>
-            <select style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-primary)", padding: "6px 12px", borderRadius: "6px", outline: "none" }}>
-              <option>Last 7 Days</option>
-              <option>Last 30 Days</option>
-              <option>This Year</option>
+            <select 
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-primary)", padding: "6px 12px", borderRadius: "6px", outline: "none" }}
+            >
+              <option value="7d">Last 7 Days</option>
+              <option value="30d">Last 30 Days</option>
+              <option value="1y">This Year</option>
             </select>
           </div>
           <div style={{ height: "300px", width: "100%", padding: 0 }}>
@@ -94,8 +106,8 @@ export default function AdminDashboard() {
                       <stop offset="95%" stopColor="var(--accent-blue)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => formatCurrency(val)} />
+                  <XAxis dataKey="name" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} minTickGap={20} />
+                  <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={compactFormatter} width={60} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: 'var(--background-secondary)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
                     itemStyle={{ color: 'var(--accent-blue)', fontWeight: 600 }}

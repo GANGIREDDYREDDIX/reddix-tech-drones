@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
     
@@ -23,39 +23,67 @@ export async function GET() {
 
     if (productsError) throw productsError;
 
+    const { searchParams } = new URL(request.url);
+    const range = searchParams.get('range') || '7d';
+
     let totalRevenue = 0;
     let totalOrders = orders.length;
     let activeOrders = 0;
 
-    // Aggregate revenue by date for the chart
-    const revenueByDate: Record<string, number> = {};
+    // Build the base dense array for chart
+    let chartDataMap: Record<string, number> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let daysToSubtract = 6; // default 7d
+    if (range === '30d') daysToSubtract = 29;
+    else if (range === '1y') daysToSubtract = 364; // Or we can group by month, but let's keep it daily for simplicity if the scale isn't too large, or group by month for '1y'.
+    
+    if (range === '1y') {
+      // Group by month
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const dateKey = d.toLocaleString('default', { month: 'short', year: '2-digit' });
+        chartDataMap[dateKey] = 0;
+      }
+    } else {
+      // Group by day
+      for (let i = daysToSubtract; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateKey = `${d.toLocaleString('default', { month: 'short' })} ${d.getDate()}`;
+        chartDataMap[dateKey] = 0;
+      }
+    }
 
     orders.forEach((order: any) => {
-      // Calculate totals
       if (order.status !== 'Cancelled') {
         totalRevenue += order.total;
       }
-      
       if (order.status === 'Processing' || order.status === 'Shipped') {
         activeOrders++;
       }
 
-      // Format date for chart (e.g. "Oct 24")
-      const dateObj = new Date(order.date);
-      const dateKey = `${dateObj.toLocaleString('default', { month: 'short' })} ${dateObj.getDate()}`;
-      
-      if (!revenueByDate[dateKey]) {
-        revenueByDate[dateKey] = 0;
-      }
+      // Populate chart data
       if (order.status !== 'Cancelled') {
-        revenueByDate[dateKey] += order.total;
+        const orderDate = new Date(order.date);
+        let key = '';
+        if (range === '1y') {
+          key = orderDate.toLocaleString('default', { month: 'short', year: '2-digit' });
+        } else {
+          key = `${orderDate.toLocaleString('default', { month: 'short' })} ${orderDate.getDate()}`;
+        }
+        
+        if (chartDataMap[key] !== undefined) {
+          chartDataMap[key] += order.total;
+        }
       }
     });
 
-    // Convert object map into array for Recharts
-    const chartData = Object.keys(revenueByDate).map(date => ({
-      name: date,
-      revenue: revenueByDate[date]
+    // Convert object map into array
+    const chartData = Object.keys(chartDataMap).map(key => ({
+      name: key,
+      revenue: chartDataMap[key]
     }));
 
     // Get 3 most recent orders for the dashboard list

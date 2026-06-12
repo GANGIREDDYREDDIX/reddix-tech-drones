@@ -6,12 +6,27 @@ import styles from "./CartSidebar.module.css";
 import clsx from "clsx";
 import Link from "next/link";
 import { useCurrency } from "@/context/CurrencyContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function CartSidebar() {
   const { isCartOpen, setIsCartOpen, items, updateQuantity, removeFromCart, cartTotal, clearCart } = useCart();
   const { formatCurrency } = useCurrency();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [availablePoints, setAvailablePoints] = useState(0);
+  const [redeemPoints, setRedeemPoints] = useState(0);
+
+  useEffect(() => {
+    if (isCartOpen) {
+      fetch("/api/customers/points")
+        .then(r => r.json())
+        .then(data => setAvailablePoints(data.points || 0))
+        .catch(() => setAvailablePoints(0));
+    }
+  }, [isCartOpen]);
+
+  // Conversion: 100 points = ₹1
+  const discount = Math.floor(redeemPoints / 100);
+  const finalTotal = Math.max(0, cartTotal - discount);
 
   const handleCheckout = async () => {
     setIsCheckingOut(true);
@@ -19,7 +34,7 @@ export default function CartSidebar() {
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, total: cartTotal })
+        body: JSON.stringify({ items, total: finalTotal, redeemedPoints: redeemPoints })
       });
       
       if (res.ok) {
@@ -103,9 +118,31 @@ export default function CartSidebar() {
               <span>Subtotal</span>
               <span>{formatCurrency(cartTotal)}</span>
             </div>
-            <div className={styles.summaryTotal}>
+            
+            {availablePoints > 0 && (
+              <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>Reddix Points ({availablePoints} available)</span>
+                  <span style={{ fontSize: '0.8rem', color: '#10b981' }}>- {formatCurrency(discount)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max={availablePoints} 
+                    step="100"
+                    value={redeemPoints}
+                    onChange={(e) => setRedeemPoints(Number(e.target.value))}
+                    style={{ flex: 1, accentColor: 'var(--accent-blue)' }}
+                  />
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', minWidth: '60px', textAlign: 'right' }}>{redeemPoints} pts</span>
+                </div>
+              </div>
+            )}
+
+            <div className={styles.summaryTotal} style={{ marginTop: '16px' }}>
               <span>Total</span>
-              <span>{formatCurrency(cartTotal)}</span>
+              <span>{formatCurrency(finalTotal)}</span>
             </div>
             
             <button 

@@ -33,14 +33,14 @@ function BarChart({ data }: { data: { name: string; revenue: number }[] }) {
   const yTicks = [1, 0.75, 0.5, 0.25, 0];
 
   // Show every Nth x-label to avoid crowding
-  const labelStep = data.length <= 8 ? 1 : data.length <= 16 ? 2 : 4;
+  const labelStep = data.length <= 8 ? 1 : data.length <= 16 ? 2 : Math.ceil(data.length / 6);
 
   return (
     <div style={{ display: "flex", height: 300, gap: 0 }}>
       {/* Y-Axis */}
       <div style={{
         display: "flex", flexDirection: "column", justifyContent: "space-between",
-        paddingBottom: 28, width: 56, flexShrink: 0, textAlign: "right",
+        paddingBottom: 24, width: 48, flexShrink: 0, textAlign: "right",
       }}>
         {yTicks.map((f, i) => (
           <span key={i} style={{
@@ -113,7 +113,7 @@ function BarChart({ data }: { data: { name: string; revenue: number }[] }) {
 
                   {/* Bar */}
                   <div style={{
-                    width: "70%",
+                    width: "85%",
                     minWidth: 4,
                     height: `${Math.max(pct > 0 ? pct : 0, pct > 0 ? 1 : 0)}%`,
                     minHeight: pct > 0 ? 4 : 0,
@@ -133,13 +133,14 @@ function BarChart({ data }: { data: { name: string; revenue: number }[] }) {
 
         {/* X-Axis labels */}
         <div style={{
-          display: "flex", height: 28, paddingLeft: 4, paddingRight: 4, gap: data.length > 20 ? 2 : 4,
+          display: "flex", height: 24, paddingLeft: 4, paddingRight: 4, gap: data.length > 20 ? 2 : 4,
+          marginTop: 8
         }}>
           {data.map((d, i) => (
             <div key={i} style={{
               flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 10, color: "var(--text-secondary)",
-              overflow: "hidden", whiteSpace: "nowrap",
+              whiteSpace: "nowrap",
             }}>
               {i % labelStep === 0 ? d.name : ""}
             </div>

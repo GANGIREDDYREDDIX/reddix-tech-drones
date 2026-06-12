@@ -8,18 +8,17 @@ import {
 import styles from "./dashboard.module.css";
 import { useCurrency } from "@/context/CurrencyContext";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Compact formatter ───────────────────────────────────────────────────────
 const compact = (val: number) => {
   if (val >= 10_000_000) return `₹${(val / 10_000_000).toFixed(1)}Cr`;
-  if (val >= 100_000) return `₹${(val / 100_000).toFixed(1)}L`;
-  if (val >= 1_000) return `₹${(val / 1_000).toFixed(1)}K`;
+  if (val >= 100_000)   return `₹${(val / 100_000).toFixed(1)}L`;
+  if (val >= 1_000)     return `₹${(val / 1_000).toFixed(1)}K`;
   return `₹${val.toFixed(0)}`;
 };
 
-// ─── Custom SVG Bar Chart ─────────────────────────────────────────────────────
+// ─── Pure CSS/HTML Bar Chart (theme-aware) ───────────────────────────────────
 function BarChart({ data }: { data: { name: string; revenue: number }[] }) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [tooltip, setTooltip] = useState<{ x: number; y: number; label: string; value: number } | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const { formatCurrency } = useCurrency();
 
   if (!data || data.length === 0) {
@@ -31,119 +30,134 @@ function BarChart({ data }: { data: { name: string; revenue: number }[] }) {
   }
 
   const maxVal = Math.max(...data.map(d => d.revenue), 1);
-  const W = 700, H = 260, PAD_L = 64, PAD_R = 16, PAD_T = 16, PAD_B = 48;
-  const chartW = W - PAD_L - PAD_R;
-  const chartH = H - PAD_T - PAD_B;
-  const barW = Math.max(8, Math.min(36, (chartW / data.length) * 0.55));
-  const gap = chartW / data.length;
+  const yTicks = [1, 0.75, 0.5, 0.25, 0];
 
-  // Y-axis ticks: 5 nice levels
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(f => maxVal * f);
-
-  // Only show every Nth label on X to avoid crowding
-  const labelStep = data.length <= 8 ? 1 : data.length <= 16 ? 2 : data.length <= 31 ? 4 : 1;
+  // Show every Nth x-label to avoid crowding
+  const labelStep = data.length <= 8 ? 1 : data.length <= 16 ? 2 : 4;
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={`0 0 ${W} ${H}`}
-      style={{ width: "100%", height: "100%", overflow: "visible" }}
-      onMouseLeave={() => setTooltip(null)}
-    >
-      {/* Y-axis grid lines & labels */}
-      {yTicks.map((tick, i) => {
-        const cy = PAD_T + chartH - (tick / maxVal) * chartH;
-        return (
-          <g key={i}>
-            <line
-              x1={PAD_L} y1={cy} x2={PAD_L + chartW} y2={cy}
-              stroke="rgba(255,255,255,0.07)" strokeDasharray="4 4"
-            />
-            <text x={PAD_L - 8} y={cy + 4} textAnchor="end"
-              fill="rgba(255,255,255,0.4)" fontSize={10}>
-              {compact(tick)}
-            </text>
-          </g>
-        );
-      })}
+    <div style={{ display: "flex", height: 300, gap: 0 }}>
+      {/* Y-Axis */}
+      <div style={{
+        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        paddingBottom: 28, width: 56, flexShrink: 0, textAlign: "right",
+      }}>
+        {yTicks.map((f, i) => (
+          <span key={i} style={{
+            fontSize: 11, color: "var(--text-secondary)",
+            lineHeight: 1, paddingRight: 10,
+          }}>
+            {compact(maxVal * f)}
+          </span>
+        ))}
+      </div>
 
-      {/* Bars */}
-      {data.map((d, i) => {
-        const barH = Math.max(2, (d.revenue / maxVal) * chartH);
-        const bx = PAD_L + i * gap + gap / 2 - barW / 2;
-        const by = PAD_T + chartH - barH;
+      {/* Chart area */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+        {/* Grid + bars */}
+        <div style={{ flex: 1, position: "relative", borderLeft: "1px solid var(--border-color, rgba(128,128,128,0.2))" }}>
+          {/* Horizontal grid lines */}
+          {yTicks.map((f, i) => (
+            <div key={i} style={{
+              position: "absolute", top: `${(1 - f) * 100}%`, left: 0, right: 0,
+              borderTop: i === yTicks.length - 1
+                ? "1px solid var(--border-color, rgba(128,128,128,0.3))"
+                : "1px dashed var(--border-color, rgba(128,128,128,0.15))",
+            }} />
+          ))}
 
-        return (
-          <g key={i}
-            onMouseEnter={(e) => {
-              const rect = svgRef.current?.getBoundingClientRect();
-              if (!rect) return;
-              setTooltip({ x: bx + barW / 2, y: by, label: d.name, value: d.revenue });
-            }}
-            style={{ cursor: "pointer" }}
-          >
-            {/* Hover hit area */}
-            <rect
-              x={PAD_L + i * gap} y={PAD_T}
-              width={gap} height={chartH}
-              fill="transparent"
-            />
-            {/* Bar */}
-            <rect
-              x={bx} y={by}
-              width={barW} height={barH}
-              rx={4} ry={4}
-              fill={d.revenue > 0 ? "url(#barGrad)" : "rgba(255,255,255,0.08)"}
-            />
-            {/* X label */}
-            {i % labelStep === 0 && (
-              <text
-                x={bx + barW / 2} y={H - 6}
-                textAnchor="middle"
-                fill="rgba(255,255,255,0.45)" fontSize={9}
-              >
-                {d.name}
-              </text>
-            )}
-          </g>
-        );
-      })}
+          {/* Bars row */}
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "flex-end",
+            paddingBottom: 0, gap: data.length > 20 ? 2 : 4, padding: "0 4px",
+          }}>
+            {data.map((d, i) => {
+              const pct = maxVal > 0 ? (d.revenue / maxVal) * 100 : 0;
+              const isHovered = hoveredIndex === i;
+              return (
+                <div
+                  key={i}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  style={{
+                    flex: 1, display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "flex-end",
+                    height: "100%", position: "relative", cursor: "pointer",
+                  }}
+                >
+                  {/* Tooltip */}
+                  {isHovered && (
+                    <div style={{
+                      position: "absolute",
+                      bottom: "100%",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      background: "var(--background-secondary, #1e293b)",
+                      border: "1px solid rgba(128,128,128,0.2)",
+                      borderRadius: 8,
+                      padding: "6px 10px",
+                      whiteSpace: "nowrap",
+                      zIndex: 10,
+                      marginBottom: 6,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                    }}>
+                      <div style={{ fontSize: 10, color: "var(--text-secondary)", marginBottom: 2 }}>
+                        {d.name}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6" }}>
+                        {formatCurrency(d.revenue)}
+                      </div>
+                    </div>
+                  )}
 
-      {/* Gradient def */}
-      <defs>
-        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-          <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.7} />
-        </linearGradient>
-      </defs>
+                  {/* Bar */}
+                  <div style={{
+                    width: "70%",
+                    minWidth: 4,
+                    height: `${Math.max(pct > 0 ? pct : 0, pct > 0 ? 1 : 0)}%`,
+                    minHeight: pct > 0 ? 4 : 0,
+                    background: pct > 0
+                      ? isHovered
+                        ? "linear-gradient(to top, #1d4ed8, #60a5fa)"
+                        : "linear-gradient(to top, #2563eb, #3b82f6)"
+                      : "var(--border-color, rgba(128,128,128,0.1))",
+                    borderRadius: "4px 4px 0 0",
+                    transition: "height 0.5s cubic-bezier(0.4,0,0.2,1), background 0.15s",
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
-      {/* Tooltip */}
-      {tooltip && (() => {
-        const TW = 140, TH = 48;
-        const tx = Math.min(tooltip.x - TW / 2, W - TW - PAD_R);
-        const ty = Math.max(PAD_T, tooltip.y - TH - 8);
-        return (
-          <g>
-            <rect x={tx} y={ty} width={TW} height={TH} rx={8} fill="#1e293b" stroke="rgba(255,255,255,0.15)" />
-            <text x={tx + 8} y={ty + 16} fill="rgba(255,255,255,0.6)" fontSize={10}>{tooltip.label}</text>
-            <text x={tx + 8} y={ty + 34} fill="#60a5fa" fontSize={13} fontWeight="bold">
-              {formatCurrency(tooltip.value)}
-            </text>
-          </g>
-        );
-      })()}
-    </svg>
+        {/* X-Axis labels */}
+        <div style={{
+          display: "flex", height: 28, paddingLeft: 4, paddingRight: 4, gap: data.length > 20 ? 2 : 4,
+        }}>
+          {data.map((d, i) => (
+            <div key={i} style={{
+              flex: 1, display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 10, color: "var(--text-secondary)",
+              overflow: "hidden", whiteSpace: "nowrap",
+            }}>
+              {i % labelStep === 0 ? d.name : ""}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ─── Status color map ────────────────────────────────────────────────────────
+// ─── Status colors ────────────────────────────────────────────────────────────
 const STATUS_COLORS: Record<string, string> = {
-  delivered: "#10b981",
-  pending: "#f59e0b",
+  delivered:  "#10b981",
+  pending:    "#f59e0b",
   processing: "#3b82f6",
-  shipped: "#6366f1",
-  cancelled: "#ef4444",
-  restocked: "#8b5cf6",
+  shipped:    "#6366f1",
+  cancelled:  "#ef4444",
+  restocked:  "#8b5cf6",
 };
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
@@ -158,14 +172,13 @@ export default function AdminDashboard() {
   const { formatCurrency, loading } = useCurrency();
 
   useEffect(() => {
-    setAnalytics(null); // show loading state when range changes
+    setAnalytics(null);
     fetch(`/api/analytics?range=${timeRange}`)
       .then(r => r.json())
       .then(setAnalytics)
       .catch(console.error);
   }, [timeRange]);
 
-  const compactFmt = (v: number) => (loading ? "..." : compact(v));
   const currFmt = (v: number) => (loading ? "..." : formatCurrency(v));
 
   return (
@@ -230,14 +243,14 @@ export default function AdminDashboard() {
               value={timeRange}
               onChange={e => setTimeRange(e.target.value)}
               style={{
-                background: "rgba(255,255,255,0.07)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "var(--background-secondary, rgba(128,128,128,0.1))",
+                border: "1px solid var(--border-color, rgba(128,128,128,0.2))",
                 color: "var(--text-primary)",
                 padding: "6px 14px",
                 borderRadius: 8,
                 outline: "none",
                 cursor: "pointer",
-                fontSize: 13
+                fontSize: 13,
               }}
             >
               <option value="7d">Last 7 Days</option>
@@ -246,26 +259,24 @@ export default function AdminDashboard() {
             </select>
           </div>
 
-          <div style={{ flex: 1, minHeight: 280, position: "relative" }}>
-            {!analytics ? (
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                height: "100%", color: "var(--text-secondary)", gap: 10
-              }}>
-                <span style={{
-                  width: 18, height: 18, border: "2px solid #3b82f6",
-                  borderTopColor: "transparent", borderRadius: "50%",
-                  display: "inline-block", animation: "spin 0.8s linear infinite"
-                }} />
-                Loading chart...
-              </div>
-            ) : (
-              <BarChart data={analytics.chartData} />
-            )}
-          </div>
+          {!analytics ? (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              height: 300, color: "var(--text-secondary)", gap: 10, fontSize: 14,
+            }}>
+              <span style={{
+                width: 18, height: 18, border: "2px solid #3b82f6",
+                borderTopColor: "transparent", borderRadius: "50%",
+                display: "inline-block", animation: "spin 0.8s linear infinite",
+              }} />
+              Loading chart...
+            </div>
+          ) : (
+            <BarChart data={analytics.chartData} />
+          )}
 
           {/* Legend */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
             <div style={{ width: 12, height: 12, borderRadius: 3, background: "linear-gradient(#3b82f6,#1d4ed8)" }} />
             <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Revenue (non-cancelled orders)</span>
           </div>
@@ -295,7 +306,7 @@ export default function AdminDashboard() {
                           padding: "2px 10px",
                           borderRadius: 20,
                           fontSize: 11,
-                          fontWeight: 600
+                          fontWeight: 600,
                         }}>{order.status}</span>
                         <span className={styles.orderAmount}>{currFmt(order.amount)}</span>
                       </div>
@@ -310,7 +321,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Low Stock Alerts */}
+          {/* Low Stock */}
           <div className={styles.activityCard}>
             <h2 style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: 8 }}>
               <AlertTriangle size={18} /> Low Stock Alerts
@@ -325,7 +336,7 @@ export default function AdminDashboard() {
                     </div>
                     <span style={{
                       background: "rgba(239,68,68,0.1)", color: "#ef4444",
-                      padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600
+                      padding: "2px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600,
                     }}>
                       {item.qty} left
                     </span>

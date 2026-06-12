@@ -95,10 +95,28 @@ export default function Shop() {
     setTimeout(() => setAddedId(null), 1500);
   };
 
-  const openReviewModal = (product: Product) => {
-    setReviewProduct(product);
-    setReviewForm({ rating: 5, customerName: "", text: "" });
-    setReviewModalOpen(true);
+  const openReviewModal = async (product: Product) => {
+    try {
+      const res = await fetch(`/api/reviews/verify-purchase?productId=${product.id}`);
+      
+      if (res.status === 401) {
+        alert("Please log in to write a review.");
+        return;
+      }
+      
+      const data = await res.json();
+      
+      if (!data.canReview) {
+        alert("You can only review products that you have purchased and that have been delivered to you.");
+        return;
+      }
+      
+      setReviewProduct(product);
+      setReviewForm({ rating: 5, customerName: data.customerName || "", text: "" });
+      setReviewModalOpen(true);
+    } catch(e) {
+      alert("Failed to verify purchase status. Please try again.");
+    }
   };
 
   const submitReview = async (e: React.FormEvent) => {

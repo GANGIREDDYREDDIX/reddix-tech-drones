@@ -103,6 +103,20 @@ export async function POST(request: Request) {
 
     if (error) throw error;
     
+    // Automatically mark any pending abandoned carts for this user as 'Recovered'
+    try {
+      await supabase
+        .from('abandoned_carts')
+        .update({ 
+          status: 'Recovered',
+          last_updated: new Date().toISOString()
+        })
+        .eq('email', user.email)
+        .neq('status', 'Recovered');
+    } catch(e) {
+      console.error("Failed to mark abandoned carts as recovered", e);
+    }
+    
     // Only deduct redeemed points here. Earned points are awarded via status update to Delivered.
     if (validRedeemedPoints > 0) {
       try {

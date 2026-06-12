@@ -61,8 +61,9 @@ export async function POST(request: Request) {
       if (customerData) {
         const available = (customerData.points_issued || 0) - (customerData.points_redeemed || 0);
         if (redeemedPoints <= available) {
-          validRedeemedPoints = redeemedPoints;
-          const discount = Math.floor(validRedeemedPoints / 100);
+          // Max points they can redeem is limited by the cart total (1 point = 1 Rs)
+          validRedeemedPoints = Math.min(redeemedPoints, Math.floor(dynamicTotal));
+          const discount = validRedeemedPoints;
           finalTotal = Math.max(0, dynamicTotal - discount);
         }
       }

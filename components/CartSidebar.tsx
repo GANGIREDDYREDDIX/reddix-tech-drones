@@ -24,8 +24,17 @@ export default function CartSidebar() {
     }
   }, [isCartOpen]);
 
-  // Conversion: 100 points = ₹1
-  const discount = Math.floor(redeemPoints / 100);
+  // Conversion: 1 point = ₹1
+  const maxPointsToRedeem = Math.min(availablePoints, Math.floor(cartTotal));
+  
+  // Ensure redeemPoints doesn't exceed the new max
+  useEffect(() => {
+    if (redeemPoints > maxPointsToRedeem) {
+      setRedeemPoints(maxPointsToRedeem);
+    }
+  }, [cartTotal, availablePoints, maxPointsToRedeem]);
+
+  const discount = redeemPoints;
   const finalTotal = Math.max(0, cartTotal - discount);
 
   const handleCheckout = async () => {
@@ -129,8 +138,8 @@ export default function CartSidebar() {
                   <input 
                     type="range" 
                     min="0" 
-                    max={availablePoints} 
-                    step="100"
+                    max={maxPointsToRedeem} 
+                    step="1"
                     value={redeemPoints}
                     onChange={(e) => setRedeemPoints(Number(e.target.value))}
                     style={{ flex: 1, accentColor: 'var(--accent-blue)' }}

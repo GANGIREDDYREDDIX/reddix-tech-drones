@@ -20,6 +20,7 @@ function CustomerAuthForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -133,6 +134,13 @@ function CustomerAuthForm() {
           }
         });
         if (signUpError) throw signUpError;
+
+        // Create the customer profile securely via the registration webhook
+        await fetch('/api/customers/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: name || email.split('@')[0], email, referralCode })
+        });
 
         // Trigger welcome email silently in the background
         fetch('/api/welcome', {
@@ -300,6 +308,29 @@ function CustomerAuthForm() {
                     className={styles.input}
                     disabled={loading}
                     required={!isLogin}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence mode="popLayout">
+              {!isLogin && (
+                <motion.div 
+                  key="referral-input"
+                  initial={{ opacity: 0, height: 0, y: -10 }}
+                  animate={{ opacity: 1, height: "auto", y: 0 }}
+                  exit={{ opacity: 0, height: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className={styles.inputGroup}
+                >
+                  <User size={18} className={styles.inputIcon} />
+                  <input 
+                    type="text" 
+                    placeholder="Referral Code (Optional)"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    className={styles.input}
+                    disabled={loading}
                   />
                 </motion.div>
               )}

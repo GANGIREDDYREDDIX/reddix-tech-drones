@@ -18,6 +18,7 @@ export async function POST(request: Request) {
 
     // 2. Validate the provided referralCode (if any) and run points engine
     let validReferredBy = null;
+    let initialPoints = 0;
 
     if (referralCode) {
       // Look up the customer who owns this code
@@ -46,6 +47,9 @@ export async function POST(request: Request) {
           .eq('id', referrer.id);
           
         console.log(`Issued ${pointsToAward} points to ${referrer.id} for referring a new customer.`);
+        
+        // The new customer will also get these points as a welcome bonus
+        initialPoints = pointsToAward;
       } else {
         // We will just log it. The registration shouldn't fail if the code is invalid,
         // it just won't apply the referral.
@@ -66,7 +70,7 @@ export async function POST(request: Request) {
         total_orders: 0,
         total_spent: 0,
         status: 'Active',
-        points_issued: 0,
+        points_issued: initialPoints,
         points_redeemed: 0,
         referral_code: newReferralCode,
         referred_by: validReferredBy

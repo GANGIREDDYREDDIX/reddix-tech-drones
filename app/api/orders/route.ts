@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     try {
       const { data: config } = await supabase.from('rewards_config').select('purchases_multiplier').eq('id', 'default').single();
       const multiplier = config ? config.purchases_multiplier : 1;
-      pointsToAdd = Math.floor(dynamicTotal / 100) * multiplier;
+      pointsToAdd = Math.floor(finalTotal / 100) * multiplier;
     } catch(e) {
       console.error("Failed to calculate points earned", e);
     }

@@ -29,10 +29,11 @@ export async function GET() {
       }
     }
     
-    // Fetch customer data for KPIs
+    // Fetch customer data for KPIs + leaderboard
     const { data: customers, error: customersError } = await supabase
       .from('customers')
-      .select('points_issued, points_redeemed, status');
+      .select('id, name, email, points_issued, points_redeemed, status, joined_date')
+      .order('points_issued', { ascending: false });
       
     let kpis = {
       total_issued: 0,
@@ -50,7 +51,16 @@ export async function GET() {
     
     return NextResponse.json({
       config: finalConfig,
-      kpis: kpis
+      kpis: kpis,
+      customers: (customers || []).map(c => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        points_issued: c.points_issued || 0,
+        points_redeemed: c.points_redeemed || 0,
+        points_balance: (c.points_issued || 0) - (c.points_redeemed || 0),
+        status: c.status,
+      }))
     });
   } catch (error) {
     console.error('Failed to read rewards config:', error);

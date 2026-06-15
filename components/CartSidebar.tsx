@@ -37,28 +37,8 @@ export default function CartSidebar() {
   const discount = redeemPoints;
   const finalTotal = Math.max(0, cartTotal - discount);
 
-  const handleCheckout = async () => {
-    setIsCheckingOut(true);
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, total: finalTotal, redeemedPoints: redeemPoints })
-      });
-      
-      if (res.ok) {
-        alert("Order placed successfully! A Reddix Tech representative will contact you shortly.");
-        clearCart();
-        setIsCartOpen(false);
-      } else {
-        const errorData = await res.json();
-        alert(errorData.error || "Failed to place order.");
-      }
-    } catch (e) {
-      alert("Error placing order. Please try again.");
-    } finally {
-      setIsCheckingOut(false);
-    }
+  const handleCheckout = () => {
+    setIsCartOpen(false);
   };
 
   return (
@@ -154,13 +134,23 @@ export default function CartSidebar() {
               <span>{formatCurrency(finalTotal)}</span>
             </div>
             
-            <button 
-              className={styles.checkoutBtn}
-              onClick={handleCheckout}
-              disabled={isCheckingOut}
-            >
-              {isCheckingOut ? "Processing..." : "Place Order"}
-            </button>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
+              <Link 
+                href="/cart"
+                className={styles.checkoutBtn}
+                style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
+                onClick={() => setIsCartOpen(false)}
+              >
+                View Cart
+              </Link>
+              <Link 
+                href="/checkout"
+                className={styles.checkoutBtn}
+                onClick={() => setIsCartOpen(false)}
+              >
+                Checkout
+              </Link>
+            </div>
           </div>
         )}
       </div>

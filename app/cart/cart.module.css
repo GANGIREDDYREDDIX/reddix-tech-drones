@@ -1,0 +1,325 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 120px 20px 60px;
+  color: var(--text-primary);
+  min-height: 80vh;
+}
+
+.breadcrumb {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 48px;
+  font-size: 1.25rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.activeStep {
+  color: var(--text-primary);
+}
+
+.inactiveStep {
+  color: var(--text-secondary);
+}
+
+.separator {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.content {
+  display: flex;
+  gap: 40px;
+}
+
+.leftCol {
+  flex: 2;
+}
+
+.rightCol {
+  flex: 1;
+}
+
+/* Cart Table */
+.cartTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cartTable th {
+  text-align: left;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cartRow {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cartCell {
+  padding: 24px 0;
+  vertical-align: middle;
+}
+
+.productCell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.removeBtn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.removeBtn:hover {
+  background: var(--accent-red, #ef4444);
+  color: white;
+  border-color: var(--accent-red, #ef4444);
+}
+
+.productImg {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: var(--background-secondary);
+}
+
+.productName {
+  font-weight: 500;
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+
+.productName:hover {
+  text-decoration: underline;
+}
+
+.price {
+  font-weight: 600;
+}
+
+.quantityControl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.quantityBtn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quantityBtn:hover {
+  color: var(--accent-blue);
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+.btnOutline, .btnPrimary {
+  padding: 12px 24px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.btnOutline {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.btnOutline:hover {
+  border-color: var(--text-primary);
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, #0050FF, #00D6FF);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  width: 100%;
+  text-align: center;
+  display: block;
+  padding: 18px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(0, 80, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.btnPrimary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: all 0.5s ease;
+}
+
+.btnPrimary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0, 214, 255, 0.5);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.btnPrimary:hover::before {
+  left: 100%;
+}
+
+/* Right Column: Totals */
+.totalsCard {
+  background: rgba(var(--text-primary-rgb), 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(var(--text-primary-rgb), 0.08);
+  padding: 40px;
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.1);
+}
+
+.totalsHeader {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.totalsRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+}
+
+.totalsRow strong {
+  font-weight: 600;
+}
+
+.shippingOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.shippingOptions label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.totalsTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 16px;
+  margin-bottom: 24px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.couponBox {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.couponBox h4 {
+  margin-bottom: 12px;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.couponInput {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+.couponInput input {
+  flex: 1;
+  padding: 12px;
+  background: rgba(var(--text-primary-rgb), 0.02);
+  border: 1px solid rgba(var(--text-primary-rgb), 0.08);
+  color: var(--text-primary);
+  border-radius: 8px 0 0 8px;
+  outline: none;
+}
+
+.couponInput input:focus {
+  border-color: rgba(0, 214, 255, 0.5);
+  box-shadow: inset 0 0 10px rgba(0, 214, 255, 0.1);
+}
+
+.btnSecondary {
+  background: rgba(0, 214, 255, 0.1);
+  border: 1px solid rgba(0, 214, 255, 0.3);
+  color: #00D6FF;
+  padding: 0 20px;
+  border-radius: 0 8px 8px 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.btnSecondary:hover {
+  background: rgba(0, 214, 255, 0.2);
+  border-color: rgba(0, 214, 255, 0.5);
+}
+
+@media (max-width: 900px) {
+  .content {
+    flex-direction: column;
+  }
+  .breadcrumb {
+    font-size: 1rem;
+    gap: 8px;
+  }
+}

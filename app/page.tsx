@@ -54,15 +54,17 @@ export default function Home() {
             viewport={{ amount: 0.4, margin: "-100px 0px" }}
             variants={fadeUpVariant}
           >
-            <h1 className={styles.headline}><span className="gradient-text">Reddix Tech Enterprises</span></h1>
-            <p className={styles.subheadline}>
-              Transforming businesses through enterprise-grade technology solutions.
-            </p>
-            <div className={styles.ctaButtonGroup}>
-              <Link href="/shop" className={styles.primaryCTA}>Our Services</Link>
-              <a href="#3d-printing" className={styles.secondaryCTA}>Learn More</a>
+            <div className={styles.heroContentBox}>
+              <h1 className={styles.headline}><span className="gradient-text">Reddix Tech Enterprises</span></h1>
+              <p className={styles.subheadline}>
+                Transforming businesses through enterprise-grade technology solutions.
+              </p>
+              <div className={styles.ctaButtonGroup}>
+                <Link href="/shop" className={styles.primaryCTA}>Our Services</Link>
+                <a href="#3d-printing" className={styles.secondaryCTA}>Learn More</a>
+              </div>
+              <p className={styles.microcopy}>Custom Drones • Aerial Systems • 3D Printing • Enterprise Solutions</p>
             </div>
-            <p className={styles.microcopy}>Custom Drones • Aerial Systems • 3D Printing • Enterprise Solutions</p>
           </motion.section>
 
           {/* Section 2: Drones */}

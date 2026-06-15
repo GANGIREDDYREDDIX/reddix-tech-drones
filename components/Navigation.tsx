@@ -16,7 +16,7 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { itemCount, setIsCartOpen } = useCart();
 
-  const opacity = useTransform(scrollY, [0, 100], [0, 1]);
+  const opacity = useTransform(scrollY, [0, 100], [1, 1]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [customerName, setCustomerName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);

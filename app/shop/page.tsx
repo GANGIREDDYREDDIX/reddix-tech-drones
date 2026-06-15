@@ -160,12 +160,7 @@ export default function Shop() {
       <Navigation />
       <CartSidebar />
       <main className={styles.shopContainer}>
-        {/* ─── Back Button ─── */}
-        <div style={{ padding: '20px 5% 0' }}>
-          <button onClick={() => router.back()} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#666', textDecoration: 'none', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>
-            <ChevronLeft size={20} /> Back
-          </button>
-        </div>
+        {/* Removed Back Button from Shop Index as per UI/UX best practices */}
 
         {/* ─── Hero Banner ─── */}
         <section className={styles.shopHero}>
@@ -185,15 +180,11 @@ export default function Shop() {
         <section className={styles.trustBadges}>
           <div className={styles.trustItem}>
             <Truck size={20} />
-            <span>Free Shipping over {formatCurrency(120)}</span>
+            <span>Free Shipping over {formatCurrency(9999)}</span>
           </div>
           <div className={styles.trustItem}>
             <Shield size={20} />
-            <span>2-Year Warranty</span>
-          </div>
-          <div className={styles.trustItem}>
-            <RotateCcw size={20} />
-            <span>30-Day Returns</span>
+            <span>Manufacturer Warranty</span>
           </div>
           <div className={styles.trustItem}>
             <Star size={20} />
@@ -255,7 +246,27 @@ export default function Shop() {
         {/* ─── Product Grid ─── */}
         <section className={styles.productGrid}>
           <AnimatePresence mode="popLayout">
-            {filteredProducts.length === 0 ? (
+            {isLoading ? (
+              // Loading Skeletons to prevent layout shift and maintain scroll position
+              Array.from({ length: 6 }).map((_, i) => (
+                <motion.div
+                  key={`skeleton-${i}`}
+                  className={styles.productCard}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  style={{ minHeight: '480px' }}
+                >
+                  <div className={styles.imageContainer} style={{ background: 'rgba(var(--text-primary-rgb), 0.05)' }} />
+                  <div className={styles.productInfo}>
+                    <div style={{ height: '12px', width: '40%', background: 'rgba(var(--text-primary-rgb), 0.1)', marginBottom: '12px', borderRadius: '4px' }} />
+                    <div style={{ height: '20px', width: '80%', background: 'rgba(var(--text-primary-rgb), 0.1)', marginBottom: '8px', borderRadius: '4px' }} />
+                    <div style={{ height: '14px', width: '60%', background: 'rgba(var(--text-primary-rgb), 0.1)', marginBottom: '20px', borderRadius: '4px' }} />
+                    <div style={{ height: '60px', width: '100%', background: 'rgba(var(--text-primary-rgb), 0.05)', borderRadius: '8px', marginTop: 'auto' }} />
+                  </div>
+                </motion.div>
+              ))
+            ) : filteredProducts.length === 0 ? (
               <motion.div
                 className={styles.emptyState}
                 initial={{ opacity: 0 }}
@@ -282,11 +293,12 @@ export default function Shop() {
                   )}
 
                   {/* Image */}
-                  <div className={styles.imageContainer}>
-                    <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
-                    {!product.inStock && <div className={styles.outOfStock}>Out of Stock</div>}
-                    
-                    <div className={styles.floatingActions}>
+                  <Link href={`/shop/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    <div className={styles.imageContainer}>
+                      <img src={product.image || "/sequence/ezgif-frame-001.jpg"} alt={product.name} className={styles.productImage} />
+                      {!product.inStock && <div className={styles.outOfStock}>Out of Stock</div>}
+                      
+                      <div className={styles.floatingActions}>
                       <button className={styles.floatingBtnIcon} aria-label="Add to compare" onClick={(e) => toggleCompare(product, e)}>
                         <Scale size={16} color={compareList.some(p => p.id === product.id) ? "#3b82f6" : "#fff"} />
                       </button>
@@ -295,11 +307,14 @@ export default function Shop() {
                       </button>
                     </div>
                   </div>
+                  </Link>
 
                   {/* Info */}
                   <div className={styles.productInfo}>
                     <span className={styles.productCategory}>{product.category}</span>
-                    <h3 className={styles.productName}>{product.name}</h3>
+                    <Link href={`/shop/${product.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <h3 className={styles.productName}>{product.name}</h3>
+                    </Link>
                     <p className={styles.productTagline}>{product.tagline}</p>
                     <p className={styles.productDesc}>{product.description}</p>
 
@@ -321,8 +336,8 @@ export default function Shop() {
 
                     {/* Features */}
                     <ul className={styles.featureList}>
-                      {product.features.slice(0, 3).map(f => (
-                        <li key={f}>{f}</li>
+                      {product.features.slice(0, 3).map((f, idx) => (
+                        <li key={`${f}-${idx}`}>{f}</li>
                       ))}
                     </ul>
 
@@ -374,10 +389,8 @@ export default function Shop() {
           <div className={styles.whyGrid}>
             {[
               { icon: "🎯", title: "Precision Engineering", desc: "Every component tested to aerospace tolerance standards before shipping." },
-              { icon: "🛡️", title: "2-Year Warranty", desc: "Full parts & labour warranty on all hardware products. No small print." },
-              { icon: "🚀", title: "Same-Day Dispatch", desc: "Orders placed before 2 PM IST ship the same business day." },
+              { icon: "🛡️", title: "Manufacturer Warranty", desc: "Standard 15 to 30-day warranty on electronics and motors against manufacturer defects." },
               { icon: "💬", title: "Expert Support", desc: "Dedicated drone engineers available 7 days a week via chat or call." },
-              { icon: "🔄", title: "Easy Returns", desc: "30-day no-questions-asked return policy on all orders." },
               { icon: "🏆", title: "Industry Leading", desc: "Trusted by 5000+ professionals, filmmakers and enterprise teams globally." },
             ].map(item => (
               <div key={item.title} className={styles.whyCard}>
@@ -408,36 +421,34 @@ export default function Shop() {
             <div className={styles.footerBrand}>
               <h3>Reddix Tech Enterprises</h3>
               <p>Transforming industries through custom aerial systems, precision 3D printing, and enterprise-grade technology solutions.</p>
-              <div className={styles.socialLinks}>
-                <a href="/coming-soon" aria-label="Instagram">📷</a>
-                <a href="/coming-soon" aria-label="YouTube">▶️</a>
-                <a href="/coming-soon" aria-label="LinkedIn">💼</a>
-                <a href="/coming-soon" aria-label="Twitter">🐦</a>
+              <div style={{ margin: '1rem 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                <p style={{ marginBottom: '0.25rem' }}>Email: <a href="mailto:reddix.lpu@gmail.com" style={{ color: 'inherit', textDecoration: 'none' }}>reddix.lpu@gmail.com</a></p>
+                <p>Phone: <a href="tel:+916303636151" style={{ color: 'inherit', textDecoration: 'none' }}>+91 6303 636 151</a></p>
               </div>
             </div>
 
             <div className={styles.footerCol}>
-              <h4>Products</h4>
-              <a href="/coming-soon">Professional Drones</a>
-              <a href="/coming-soon">Enterprise Systems</a>
-              <a href="/coming-soon">Accessories</a>
-              <a href="/coming-soon">3D Print Service</a>
-            </div>
-
-            <div className={styles.footerCol}>
-              <h4>Support</h4>
-              <a href="/coming-soon">Getting Started</a>
-              <a href="/coming-soon">Warranty & Repairs</a>
-              <a href="/coming-soon">FAQs</a>
+              <h4>INFORMATION</h4>
+              <Link href="/faqs">FAQs</Link>
+              <a href="/coming-soon">About Us</a>
               <a href="/coming-soon">Contact Us</a>
             </div>
 
             <div className={styles.footerCol}>
-              <h4>Company</h4>
-              <a href="/coming-soon">About Us</a>
-              <a href="/coming-soon">Careers</a>
-              <a href="/coming-soon">Privacy Policy</a>
-              <Link href="/terms-and-conditions">Terms of Service</Link>
+              <h4>POLICIES</h4>
+              <Link href="/privacy-policy">Privacy Policy</Link>
+              <Link href="/shipping-policy">Shipping Policy</Link>
+              <Link href="/terms-and-conditions">Terms & Conditions</Link>
+              <Link href="/return-policy">Return Policy & Guidelines</Link>
+            </div>
+
+            <div className={styles.footerCol}>
+              <h4>REDDIX STORE</h4>
+              <a href="/coming-soon">Facebook</a>
+              <a href="/coming-soon">Twitter</a>
+              <a href="/coming-soon">Instagram</a>
+              <a href="/coming-soon">Whatsapp</a>
+              <a href="/coming-soon">Youtube</a>
             </div>
           </div>
 

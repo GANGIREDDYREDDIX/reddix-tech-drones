@@ -63,6 +63,42 @@
   text-align: center;
 }
 
+.heroContentBox {
+  background: rgba(10, 10, 12, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 48px 32px;
+  max-width: 800px;
+  margin: 0 auto;
+  box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255,255,255,0.05);
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.heroContentBox::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(0, 214, 255, 0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.heroContentBox:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 40px 80px -10px rgba(0, 214, 255, 0.15), inset 0 0 0 1px rgba(0, 214, 255, 0.2);
+  border-color: rgba(0, 214, 255, 0.3);
+}
+
+.heroContentBox:hover::before {
+  opacity: 1;
+}
+
 .flightSection {
   top: 100vh;
   align-items: flex-start;
@@ -92,18 +128,22 @@
 
 /* Typography styles */
 .headline {
-  font-size: 4rem;
-  font-weight: 700;
+  font-size: 5rem;
+  font-weight: 800;
   margin-bottom: 1rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .subheadline {
   font-size: 1.5rem;
   font-weight: 400;
-  color: white;
+  color: rgba(255,255,255,0.8);
   margin-bottom: 2rem;
   max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .bodyCopy {
@@ -122,19 +162,36 @@
 }
 
 .primaryCTA {
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  background: linear-gradient(135deg, #0050FF, #00D6FF);
   color: white;
-  font-size: 1rem;
-  font-weight: 600;
-  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 16px 36px;
   border-radius: 100px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
   box-shadow: 0 4px 20px rgba(0, 80, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.primaryCTA::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: all 0.5s ease;
 }
 
 .primaryCTA:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 25px rgba(0, 214, 255, 0.5);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(0, 214, 255, 0.5);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.primaryCTA:hover::before {
+  left: 100%;
 }
 
 .secondaryCTA {
@@ -187,8 +244,12 @@
 }
 
 @media (max-width: 768px) {
+  .heroContentBox {
+    padding: 32px 20px;
+    border-radius: 16px;
+  }
   .headline { 
-    font-size: 2.2rem; 
+    font-size: 2.8rem; 
     line-height: 1.1;
   }
   .subheadline {

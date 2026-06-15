@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import BackButton from "@/components/BackButton";
 import styles from "./terms.module.css";
 import Navigation from "@/components/Navigation"; // Reusing navigation if applicable, or I can omit it for now since I didn't see one in the screenshot except the normal header
 
@@ -15,9 +16,7 @@ export default function TermsAndConditions() {
       <Navigation />
       
       <div className={styles.inner}>
-        <Link href="/" className={styles.backLink}>
-          <ArrowLeft size={16} /> Back to Home
-        </Link>
+        <BackButton />
         
         <div className={styles.contentCard}>
           <h1 className={styles.title}>

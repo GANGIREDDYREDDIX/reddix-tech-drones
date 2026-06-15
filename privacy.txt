@@ -1,0 +1,330 @@
+Do you have questions about how we can help your company? Send us an email and we’ll get in touch shortly.
+Menu
+Search
+Browse Categories
+Electronics
+Flight Controllers
+GPS & Buzzers
+ESC
+Race Wires & LEDs
+Stacks
+Electronic Accessories & Parts
+AIO
+FPV Equipment
+FPV Camera
+Video Receivers
+Video Transmitter
+FPV Accessories & Parts
+FPV Goggles
+FPV Antennas
+Frames
+Whoop Style
+Cinelifter
+Micro Quad
+Professional
+Mini Quad
+Frame Accessories & Parts
+Long Range Quad
+Motors
+Micro Motors
+Professional Motors
+Mini Motors
+Gimbal Motors
+Long Range Motors
+Servos
+X-Class Motors
+Motor Accessories & Parts
+Radio & Receiver
+Radio Controllers
+Radio Accessories & Parts
+Radio Modules
+Radio Receivers
+Radio Antennas
+Propellers
+Micro Propellers (1"+)
+Propeller Accessories & Parts
+Mini Propellers (5"+)
+Long Range Propellers (7"+)
+X-Class Propeller
+Battery & Chargers
+LiPo Battery
+Lipo Bag
+Li-Ion Battery
+Battery Straps
+Chargers
+Parallel Charging Boards
+Power Supply
+Battery & Charging Accessories
+RTF/PNP Quads
+Ready-to-Fly
+Toys
+Bind-n-Fly
+Plug-n-Play
+Custom Build
+Accessories
+Cables & Connectors
+Carry Case & Storage Box
+Wires
+Screws & Mounting Parts
+Heat Shrinks
+Race Gates
+Glue & Adhesives
+Swag
+Camera
+Action Cameras
+ND Filters
+Camera Mounts
+Camera Accessories
+Camera Repair Parts
+Tools
+Screwdriver & Wrench
+Mat
+Soldering & Welding
+Measuring
+Multimeter
+Select category
+Select category
+Accessories
+Cables & Connectors
+Carry Case & Storage Box
+Glue & Adhesives
+Heat Shrinks
+Race Gates
+Screws & Mounting Parts
+Swag
+Wires
+Battery & Chargers
+Battery & Charging Accessories
+Battery Straps
+Chargers
+Li-ion Battery
+Lipo Bag
+LiPo Battery
+Parallel Charging Boards
+Power Supply
+Camera
+Action Cameras
+Camera Accessories
+Camera Mounts
+Camera Repair Parts
+ND Filters
+Electronics
+AIO
+Electronic Accessories & Parts
+Electronic Speed Controller
+Flight Controllers
+GPS & Buzzers
+Race Wires & LEDs
+Stacks
+FPV Equipment
+FPV Accessories & Parts
+FPV Antennas
+FPV Camera
+FPV Goggles
+Video Receivers
+Video Transmitter
+Frames
+Cinelifter
+Frame Accessories & Parts
+Long Range Quad
+Micro Quad
+Mini Quad
+Professional Frames
+Whoop Style
+Motors
+Gimbal Motor
+LR Motors (Long Range)
+Micro Motors
+Mini Motors
+Motor Accessories & Parts
+Professional Motors
+Servos
+X-Class Motors
+New Arrivals
+Propellers
+Long Range Propellers (7"+)
+Micro Propellers (1"+)
+Mini Propellers (5"+)
+Professional Propellers
+Propeller Accessories & Parts
+X Class Propellers
+Radio & Receiver
+Radio Accessories & Parts
+Radio Antennas
+Radio Controllers
+Radio Modules
+Radio Receivers
+RTF/PNP Quads
+Bind-n-Fly
+Custom Build
+Plug-n-Play
+Ready-to-Fly
+Toys
+Tools
+Mat
+Measuring
+Multimeter
+Screwdriver & Wrench
+Soldering & Welding
+Search
+24/7 SUPPORT
++91 97782 21969
+0
+items
+₹
+0.00
+Privacy Policy
+Home
+»
+Privacy Policy
+What do we do with your information ?
+When you purchase something from our store, as part of the buying and selling process, we collect the personal information you give us such as your name, address, and email address.
+When you browse our store, we also automatically receive your computer’s internet protocol (IP) address in order to provide us with information that helps us learn about your browser and operating system.
+Email marketing (if applicable): With your permission, we may send you emails about our store, new products, and other updates.
+Disclosure
+We may disclose your personal information if we are required by law to do so or if you violate our Terms & Conditions.
+Payment
+We do not store any kind of payment details like CREDIT CARD/DEBIT CARD/BANK ACCOUNT details as this is totally handled by payment gateway
+RAZORPAY
+security features as …
+•PCI DSS and ISO:27001 compliant:: The PCI Council is a global body that sets compliance rules for managing cardholder data for all online payment systems.
+ISO is an organization with a membership of 164 national standards bodies.
+•Secure & encrypted communication:: We use the highest assurance SSL/TLS certificate, which makes sure that no unauthorized person can access your sensitive payment data over the internet.
+• Tokenization to prevent data exposure::We replace your 16-digit card number with a token, which replaces the original card number. Tokens are assigned randomly, making it extremely difficult to reverse-engineer the actual card number.
+Third-party services
+In general, the third-party providers used by us will only collect, use and disclose your information to the extent necessary to allow them to perform the services they provide to us.
+However, certain third-party service providers, such as payment gateways and other payment transaction processors, have their own privacy policies in respect to the information we are required to provide to them for your purchase-related transactions.
+For these providers, we recommend that you read their privacy policies so you can understand the manner in which your personal information will be handled by these providers.
+In particular, remember that certain providers may be located in or have facilities that are located in a different jurisdiction than either you or us. So if you elect to proceed with a transaction that involves the services of a third-party service provider, then your information may become subject to the laws of the jurisdiction(s) in which that service provider or its facilities are located.
+Once you leave our store’s website or are redirected to a third-party website or application, you are no longer governed by this Privacy Policy or our website’s Terms of Service.
+When you click on links on our store, they may direct you away from our site. We are not responsible for the privacy practices of other sites and encourage you to read their privacy statements.
+Security
+To protect your personal information, we take reasonable precautions and follow industry best practices to make sure it is not inappropriately lost, misused, accessed, disclosed, altered, or destroyed.
+Cookies
+Here is a list of cookies that we use. We’ve listed them here so that you can choose if you want to opt out of cookies or not.
+woocommerce_cart_hash
+woocommerce_items_in_cart
+wp_woocommerce_session_
+The first two cookies contain information about the cart as a whole and help WooCommerce know when the cart data changes. The final cookie (wp_woocommerce_session_) contains a unique code for each customer so that it knows where to find the cart data in the database for each customer. No personal information is stored within these cookies.
+Age of consent
+By using this site, you represent that you are at least the age of majority in your state or province of residence, or that you are the age of majority in your state or province of residence and you have given us your consent to allow any of your minor dependents to use this site.
+Changes to this privacy policy
+We reserve the right to modify this privacy policy at any time, so please review it frequently. Changes and clarifications will take effect immediately upon their posting on the website. If we make material changes to this policy, we will notify you here that it has been updated, so that you are aware of what information we collect, how we use it, and under what circumstances, if any, we use and/or disclose it.
+If our store is acquired or merged with another company, your information may be transferred to the new owners so that we may continue to sell products to you.
+Questions and contact information
+If you would like to: access, correct, amend or delete any personal information we have about you, register a complaint, or simply want more information contact us at:
+admin@drkstore.in
+FREE SHIPPING
+On all orders above 9999/-
+ONLINE PAYMENT
+UPI | Card | Netbanking | COD
+24/7 WHATSAPP SUPPORT
+Through WhatsApp.
+100% SAFE & SECURE
+Your data is secure with us.
+HASSLE FREE RETURNS
+Track or cancel orders.
+Search
+Electronics
+Flight Controllers
+Electronic Speed Controller
+Stacks
+AIO
+GPS & Buzzers
+Race Wires & LEDs
+Electronic Accessories & Parts
+FPV Equipment
+Video Transmitter
+FPV Camera
+FPV Goggles
+FPV Antennas
+Video Receivers
+FPV Accessories & Parts
+Frames
+Whoop Style
+Micro Quad
+Mini Quad
+Long Range Quad
+Cinelifter
+Professional
+Frame Accessories & Parts
+Motors
+Micro Motors
+Mini Motors
+LR Motors (Long Range)
+X-Class Motors
+Professional Motors
+Gimbal Motor
+Servos
+Motor Accessories & Parts
+Radio & Receiver
+Radio Controllers
+Radio Modules
+Radio Receivers
+Radio Antennas
+Radio Accessories & Parts
+Propellers
+Micro Propellers (1″+)
+Mini Propellers (5″+)
+Long Range Propellers (7″+)
+X Class Propellers
+Propeller Accessories & Parts
+Battery & Chargers
+LiPo Battery
+Li-ion Battery
+Chargers
+Power Supply
+Lipo Bag
+Battery Straps
+Parallel Charging Boards
+Battery & Charging Accessories
+RTF/PNP Quads
+Ready-to-Fly
+Bind-n-Fly
+Plug-n-Play
+Custom Build
+Toys
+Accessories
+Cables & Connectors
+Wires
+Heat Shrinks
+Glue & Adhesives
+Carry Case & Storage Box
+Screws & Mounting Parts
+Race Gates
+Swag
+Camera
+Action Cameras
+Camera Mounts
+ND Filters
+Camera Accessories
+Camera Repair Parts
+Tools
+Screwdriver & Wrench
+Soldering & Welding
+Measuring
+Multimeter
+Mat
+Wishlist
+Compare
+Login / Register
+Shopping cart
+Close
+Sign in
+Close
+Username or email address
+*
+Password
+*
+Log in
+Lost your password?
+Remember me
+No account yet?
+Create an Account
+Shop
+0
+Wishlist
+0
+items
+Cart
+My account

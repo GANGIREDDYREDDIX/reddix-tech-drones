@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized. Please log in to place an order.' }, { status: 401 });
     }
 
-    const { items: clientItems, redeemedPoints = 0 } = await request.json();
+    const { items: clientItems, redeemedPoints = 0, discountCode = null } = await request.json();
 
     // Fetch latest products from database to ensure dynamic, up-to-date pricing
     const { data: dbProducts, error: dbError } = await supabase.from('products').select('id, name, price, image');
@@ -69,6 +69,36 @@ export async function POST(request: Request) {
       }
     }
 
+    // Handle coupon discount code
+    let couponDiscount = 0;
+    let appliedDiscountCode: string | null = null;
+    if (discountCode) {
+      const { data: disc, error: discErr } = await supabase
+        .from('discounts')
+        .select('*')
+        .eq('code', discountCode.toUpperCase())
+        .eq('status', 'Active')
+        .single();
+      if (!discErr && disc) {
+        const now = new Date();
+        const expiry = disc.expiry ? new Date(disc.expiry) : null;
+        if (!expiry || expiry > now) {
+          if (disc.type === 'percentage') {
+            couponDiscount = Math.floor(finalTotal * (disc.value / 100));
+          } else {
+            couponDiscount = Math.min(disc.value, finalTotal);
+          }
+          finalTotal = Math.max(0, finalTotal - couponDiscount);
+          appliedDiscountCode = disc.code;
+          // Increment usage count
+          await supabase
+            .from('discounts')
+            .update({ usageCount: (disc.usageCount || 0) + 1 })
+            .eq('id', disc.id);
+        }
+      }
+    }
+
     // We calculate points earned here, but only award them when status is Delivered
     let pointsToAdd = 0;
     try {
@@ -87,7 +117,9 @@ export async function POST(request: Request) {
         points_earned: pointsToAdd,
         points_redeemed: validRedeemedPoints,
         points_awarded: false,
-        points_refunded: false
+        points_refunded: false,
+        discount_code: appliedDiscountCode,
+        discount_amount: couponDiscount > 0 ? couponDiscount : undefined,
       },
       date: new Date().toISOString(),
       status: 'Pending',

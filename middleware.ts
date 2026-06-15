@@ -84,24 +84,60 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // --- 2. Protect Admin API Routes ---
-    const adminApiPrefixes = [
+    // --- 2. Protect Backend API Routes ---
+    
+    // 2a. Strict Admin-Only APIs (All Methods Locked)
+    const strictAdminApiPrefixes = [
+      '/api/analytics',
+      '/api/customers',
+      '/api/staff',
+      '/api/settings',
+      '/api/rewards',
+      '/api/abandoned-carts',
+      '/api/upload'
+    ];
+    
+    const isStrictAdminApi = strictAdminApiPrefixes.some(prefix => pathname.startsWith(prefix));
+    
+    if (isStrictAdminApi && !isAdmin) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized. Strict Admin session required.' }),
+        { status: 401, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    // 2b. Modifying Admin APIs (GET is public, but POST/PUT/DELETE require Admin)
+    const modifyingAdminApiPrefixes = [
       '/api/products',
       '/api/discounts',
     ];
 
-    const isAdminOnlyApi = adminApiPrefixes.some(prefix => pathname.startsWith(prefix)) || 
-                           (pathname.startsWith('/api/reviews/') && pathname !== '/api/reviews');
+    const isModifyingAdminApi = modifyingAdminApiPrefixes.some(prefix => pathname.startsWith(prefix)) || 
+                                (pathname.startsWith('/api/reviews/') && pathname !== '/api/reviews');
 
     const isModifyingRequest = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method);
 
-    if (isAdminOnlyApi && isModifyingRequest) {
-      if (!isAdmin) {
-        return new NextResponse(
-          JSON.stringify({ error: 'Unauthorized. Admin session required.' }),
-          { status: 401, headers: { 'content-type': 'application/json' } }
-        );
-      }
+    if (isModifyingAdminApi && isModifyingRequest && !isAdmin) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized. Admin session required to modify data.' }),
+        { status: 401, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    // 2c. Authenticated User APIs (All Methods Locked to logged-in users)
+    const authenticatedApiPrefixes = [
+      '/api/orders',
+      '/api/addresses',
+      '/api/wishlist'
+    ];
+
+    const isAuthenticatedApi = authenticatedApiPrefixes.some(prefix => pathname.startsWith(prefix));
+
+    if (isAuthenticatedApi && !user) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized. Please log in to access this endpoint.' }),
+        { status: 401, headers: { 'content-type': 'application/json' } }
+      );
     }
 
     // --- 3. Prevent Caching on All Protected Routes ---

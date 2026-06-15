@@ -4,31 +4,27 @@ import { createClient } from '@/utils/supabase/server';
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const body = await request.json();
+    const { status } = await request.json();
     const supabase = await createClient();
     
-    const updateData: any = {};
-    if (body.status) updateData.status = body.status;
-    if (body.expiry) updateData.expiry = body.expiry;
-
     const { data, error } = await supabase
-      .from('discounts')
-      .update(updateData)
+      .from('abandoned_carts')
+      .update({ status, last_updated: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Discount not found' }, { status: 404 });
+        return NextResponse.json({ error: 'Cart not found' }, { status: 404 });
       }
       throw error;
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Failed to update discount status:', error);
-    return NextResponse.json({ error: 'Failed to update discount status' }, { status: 500 });
+    console.error('Failed to update cart status:', error);
+    return NextResponse.json({ error: 'Failed to update cart status' }, { status: 500 });
   }
 }
 
@@ -38,15 +34,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     const supabase = await createClient();
     
     const { error } = await supabase
-      .from('discounts')
+      .from('abandoned_carts')
       .delete()
       .eq('id', id);
 
     if (error) throw error;
-    
-    return NextResponse.json({ message: 'Discount deleted successfully' });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete discount:', error);
-    return NextResponse.json({ error: 'Failed to delete discount' }, { status: 500 });
+    console.error('Failed to delete cart:', error);
+    return NextResponse.json({ error: 'Failed to delete cart' }, { status: 500 });
   }
 }

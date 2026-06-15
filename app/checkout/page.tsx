@@ -55,6 +55,7 @@ export default function CheckoutPage() {
     billingCity: "",
     billingState: "",
     billingPin: "",
+    billingPhoneCode: "+91",
     billingPhone: "",
     shippingFirstName: "",
     shippingLastName: "",
@@ -92,7 +93,30 @@ export default function CheckoutPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      
+      // Auto-update country code when country changes
+      if (name === "billingCountry") {
+        const codes: Record<string, string> = {
+          "India": "+91", "United States": "+1", "United Kingdom": "+44", "Canada": "+1", 
+          "Australia": "+61", "United Arab Emirates": "+971", "Singapore": "+65", 
+          "Germany": "+49", "France": "+33", "China": "+86", "Japan": "+81"
+        };
+        if (codes[value]) {
+          next.billingPhoneCode = codes[value];
+        }
+      }
+      
+      return next;
+    });
+  };
+
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numericValue = value.replace(/[^0-9]/g, '');
+    setFormData(prev => ({ ...prev, [name]: numericValue }));
   };
 
   const handleShippingToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,10 +200,64 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    const triggerMockPayment = () => {
+    const saveOrderToDatabase = async (paymentId: string) => {
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            items, 
+            redeemedPoints: 0, 
+            discountCode: null 
+          }),
+        });
+        if (!res.ok) {
+          console.warn("Failed to save order to DB. You might not be logged in.");
+        } else {
+          // Save the address used to the customer's account automatically
+          await fetch("/api/addresses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "Billing",
+              street: formData.billingStreet1 + (formData.billingStreet2 ? ", " + formData.billingStreet2 : ""),
+              city: formData.billingCity,
+              state: formData.billingState,
+              zip: formData.billingPin,
+              country: formData.billingCountry || "India",
+              is_default: true
+            })
+          }).catch(e => console.error("Could not save address", e));
+          
+          if (shipToDifferentAddress) {
+            await fetch("/api/addresses", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "Shipping",
+                street: formData.shippingStreet1 + (formData.shippingStreet2 ? ", " + formData.shippingStreet2 : ""),
+                city: formData.shippingCity,
+                state: formData.shippingState,
+                zip: formData.shippingPin,
+                country: formData.shippingCountry || "India",
+                is_default: false
+              })
+            }).catch(e => console.error("Could not save shipping address", e));
+          }
+        }
+      } catch (err) {
+        console.error("Error saving order:", err);
+      }
+    };
+
+    const triggerMockPayment = async () => {
       const isSuccess = window.confirm("MOCK RAZORPAY: Click 'OK' to simulate a SUCCESSFUL payment, or 'Cancel' to simulate a FAILED payment.");
       if (isSuccess) {
          const mockPaymentId = "pay_mock_" + Math.random().toString(36).substring(7);
+         
+         // Actually save the mock order so it shows up in "My Orders"
+         await saveOrderToDatabase(mockPaymentId);
+         
          alert(`Payment successful! Payment ID: ${mockPaymentId}`);
          clearCart();
          router.push("/cart?success=true");
@@ -192,7 +270,7 @@ export default function CheckoutPage() {
     try {
       if (process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID === "rzp_test_YOUR_KEY_HERE" || !process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
         // MOCK PAYMENT FOR TESTING
-        triggerMockPayment();
+        await triggerMockPayment();
         return;
       }
 
@@ -208,7 +286,7 @@ export default function CheckoutPage() {
       if (!res.ok) {
         // If the backend fails (likely due to missing secrets on Vercel), fallback to mock payment for testing
         console.warn("Backend Razorpay error, falling back to mock:", orderData.error);
-        triggerMockPayment();
+        await triggerMockPayment();
         return;
       }
 
@@ -225,38 +303,8 @@ export default function CheckoutPage() {
           // In a real app, verify the payment signature here
           // After verification, save the full order details to the database
           try {
-            const orderPayload = {
-              items,
-              total: finalTotal,
-              paymentId: response.razorpay_payment_id,
-              billingAddress: {
-                firstName: formData.billingFirstName,
-                lastName: formData.billingLastName,
-                email: formData.billingEmail,
-                company: formData.billingCompany,
-                street1: formData.billingStreet1,
-                street2: formData.billingStreet2,
-                city: formData.billingCity,
-                state: formData.billingState,
-                pin: formData.billingPin,
-                phone: formData.billingPhone,
-              },
-              shippingAddress: shipToDifferentAddress ? {
-                firstName: formData.shippingFirstName,
-                lastName: formData.shippingLastName,
-                company: formData.shippingCompany,
-                street1: formData.shippingStreet1,
-                street2: formData.shippingStreet2,
-                city: formData.shippingCity,
-                state: formData.shippingState,
-                pin: formData.shippingPin,
-              } : null,
-              shippingMethod: shippingMethod ? shippingMethod.courier_name : "Pickup",
-            };
+            await saveOrderToDatabase(response.razorpay_payment_id);
             
-            // Note: We would normally post this to /api/orders, but the current /api/orders
-            // requires authentication. Assuming success for this demo flow.
-            console.log("Order saved:", orderPayload);
             alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}`);
             
             clearCart();
@@ -266,9 +314,9 @@ export default function CheckoutPage() {
           }
         },
         prefill: {
-          name: `${formData.billingFirstName} ${formData.billingLastName}`.trim() || "VISHNU VARDHAN REDDY",
-          email: formData.billingEmail || "reddix.lpu@gmail.com",
-          contact: formData.billingPhone || "9000090000"
+          name: `${formData.billingFirstName} ${formData.billingLastName}`.trim(),
+          email: formData.billingEmail,
+          contact: `${formData.billingPhoneCode} ${formData.billingPhone}`.trim()
         },
         theme: {
           color: "#0073aa"
@@ -624,12 +672,33 @@ export default function CheckoutPage() {
                 </div>
                 <div className={styles.inputGroup}>
                   <label>PIN Code *</label>
-                  <input type="text" name="billingPin" value={formData.billingPin} onChange={handleInputChange} className={styles.inputField} required />
+                  <input type="text" name="billingPin" value={formData.billingPin} onChange={handleNumericInput} className={styles.inputField} inputMode="numeric" pattern="[0-9]*" required />
                 </div>
 
                 <div className={styles.inputGroup} style={{ gridColumn: "1 / -1" }}>
                   <label>Phone *</label>
-                  <input type="tel" name="billingPhone" value={formData.billingPhone} onChange={handleInputChange} className={styles.inputField} required />
+                  <div style={{ display: "flex", gap: "10px" }}>
+                    <input 
+                      type="text" 
+                      name="billingPhoneCode" 
+                      value={formData.billingPhoneCode} 
+                      onChange={handleInputChange} 
+                      className={styles.inputField} 
+                      style={{ width: "90px" }} 
+                      required 
+                    />
+                    <input 
+                      type="tel" 
+                      name="billingPhone" 
+                      value={formData.billingPhone} 
+                      onChange={handleNumericInput} 
+                      className={styles.inputField} 
+                      style={{ flex: 1 }} 
+                      inputMode="numeric" 
+                      pattern="[0-9]*" 
+                      required 
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -923,7 +992,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className={styles.inputGroup}>
                     <label>PIN Code *</label>
-                    <input type="text" name="shippingPin" value={formData.shippingPin} onChange={handleInputChange} className={styles.inputField} required />
+                    <input type="text" name="shippingPin" value={formData.shippingPin} onChange={handleNumericInput} className={styles.inputField} inputMode="numeric" pattern="[0-9]*" required />
                   </div>
                 </div>
               )}

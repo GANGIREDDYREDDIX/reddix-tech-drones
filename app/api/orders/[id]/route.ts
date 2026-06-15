@@ -29,22 +29,37 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    const { status } = await request.json();
+    const { status, notes, undoRestock } = await request.json();
     const supabase = await createClient();
     
+    // Fetch existing order to merge customer metadata if we have notes
+    const { data: existingOrder, error: fetchError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+      }
+      throw fetchError;
+    }
+
+    let updatePayload: any = {};
+    if (status) updatePayload.status = status;
+    if (notes !== undefined) {
+      updatePayload.customer = { ...existingOrder.customer, admin_notes: notes };
+    }
+
     const { data, error } = await supabase
       .from('orders')
-      .update({ status })
+      .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-      }
-      throw error;
-    }
+    if (error) throw error;
 
     // --- POINTS ENGINE LIFECYCLE LOGIC ---
     try {
@@ -67,7 +82,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         }
         
         // 2. Clawback / Refund on Cancellation or RTO
-        if (['Cancelled', 'RTO (Pending Return)', 'RTO (Restocked)'].includes(status)) {
+        if (['Cancelled', 'RTO', 'Restocked', 'Damaged', 'Refunded'].includes(status)) {
           const { data: customerRecord } = await supabase.from('customers').select('points_issued, points_redeemed').eq('email', customerMetadata.email).single();
           
           if (customerRecord) {
@@ -103,9 +118,81 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
     // --- END POINTS ENGINE LIFECYCLE LOGIC ---
 
+    // --- AUTOMATED RESTOCKING ENGINE ---
+    try {
+      if (status === 'Restocked' && data.items && Array.isArray(data.items)) {
+        for (const item of data.items) {
+          if (item.id && item.quantity) {
+            // Fetch current stock
+            const { data: productData, error: productError } = await supabase
+              .from('products')
+              .select('stockQuantity')
+              .eq('id', item.id)
+              .single();
+
+            if (!productError && productData) {
+              const newQty = (productData.stockQuantity || 0) + item.quantity;
+              await supabase
+                .from('products')
+                .update({ 
+                  stockQuantity: newQty,
+                  inStock: newQty > 0
+                })
+                .eq('id', item.id);
+            }
+          }
+        }
+      } else if (undoRestock && status === 'RTO' && data.items && Array.isArray(data.items)) {
+        // Revert restocking (decrement inventory)
+        for (const item of data.items) {
+          if (item.id && item.quantity) {
+            const { data: productData, error: productError } = await supabase
+              .from('products')
+              .select('stockQuantity')
+              .eq('id', item.id)
+              .single();
+
+            if (!productError && productData) {
+              const newQty = Math.max(0, (productData.stockQuantity || 0) - item.quantity);
+              await supabase
+                .from('products')
+                .update({ 
+                  stockQuantity: newQty,
+                  inStock: newQty > 0
+                })
+                .eq('id', item.id);
+            }
+          }
+        }
+      }
+    } catch(e) {
+      console.error("Automated Restocking Engine Error:", e);
+    }
+    // --- END AUTOMATED RESTOCKING ENGINE ---
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Failed to update order status:', error);
     return NextResponse.json({ error: 'Failed to update order status' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to delete order:', error);
+    return NextResponse.json({ error: 'Failed to delete order' }, { status: 500 });
+  }
+}
+

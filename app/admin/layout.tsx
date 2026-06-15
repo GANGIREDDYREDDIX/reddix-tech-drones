@@ -138,7 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Topbar */}
         <header className={styles.topbar}>
           <div className={styles.breadcrumb}>
-            {navItems.find(i => i.href === pathname)?.name || 'Dashboard'}
+            {navItems.find(i => pathname === i.href || (i.href !== '/admin' && pathname.startsWith(i.href + '/')))?.name || 'Dashboard'}
           </div>
 
           <div className={styles.topbarActions}>

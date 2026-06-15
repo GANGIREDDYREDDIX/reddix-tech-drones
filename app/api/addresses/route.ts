@@ -91,3 +91,47 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: 'Failed to delete address' }, { status: 500 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Address ID required' }, { status: 400 });
+    }
+
+    const payload = await request.json();
+
+    const updatedAddress = {
+      type: payload.type || 'Shipping',
+      street: payload.street,
+      city: payload.city,
+      state: payload.state,
+      zip: payload.zip,
+      country: payload.country,
+      is_default: payload.is_default || false,
+    };
+
+    const { data, error } = await supabase
+      .from('customer_addresses')
+      .update(updatedAddress)
+      .eq('id', id)
+      .eq('customer_email', user.email)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    console.error('Failed to update address:', error);
+    return NextResponse.json({ error: 'Failed to update address' }, { status: 500 });
+  }
+}

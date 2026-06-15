@@ -120,16 +120,90 @@
   text-align: right;
 }
 
-.totalRow td {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-bottom: none;
-  padding-top: 16px;
-  font-size: 1.1rem;
+.totalRow {
+  background-color: rgba(255, 255, 255, 0.02);
   font-weight: 700;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-[data-theme='light'] .totalRow td {
+[data-theme='light'] .totalRow {
+  background-color: rgba(0, 0, 0, 0.02);
   border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.totalRow td {
+  padding: 16px 24px;
+}
+
+/* Shipping Tracker Timeline */
+.timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  position: relative;
+  padding: 0 20px;
+}
+
+.timelineLine {
+  position: absolute;
+  top: 16px;
+  left: 40px;
+  right: 40px;
+  height: 2px;
+  background: var(--border-color, rgba(255,255,255,0.1));
+  z-index: 1;
+}
+
+.timelineProgress {
+  position: absolute;
+  top: 16px;
+  left: 40px;
+  height: 2px;
+  background: #10b981;
+  z-index: 1;
+  transition: width 0.3s ease;
+}
+
+.timelineStep {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.timelineIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--background-secondary);
+  border: 2px solid var(--border-color, rgba(255,255,255,0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.timelineStep.active .timelineIcon {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+.timelineLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.timelineStep.active .timelineLabel {
+  color: var(--text-primary);
 }
 
 .infoRow {

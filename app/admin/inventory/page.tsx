@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AlertTriangle, CheckCircle, PackageX } from "lucide-react";
+import { AlertTriangle, CheckCircle, PackageX, Search } from "lucide-react";
 import styles from "./inventory.module.css";
 
 interface Product {
@@ -17,6 +17,13 @@ export default function AdminInventory() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  
+  // Filtering & Sorting State
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [stockFilter, setStockFilter] = useState("All"); // All, Low, Out
+  const [sortOrder, setSortOrder] = useState("critical"); // critical, name
+
   // Store local edits before saving
   const [localStock, setLocalStock] = useState<Record<string, number>>({});
 
@@ -80,7 +87,7 @@ export default function AdminInventory() {
           <PackageX size={12} /> Out of Stock
         </span>
       );
-    } else if (qty < 5) {
+    } else if (qty < 20) {
       return (
         <span className={`${styles.statusBadge} ${styles.lowStock}`}>
           <AlertTriangle size={12} /> Low Stock
@@ -94,12 +101,75 @@ export default function AdminInventory() {
     );
   };
 
+  // Filter and Sort Logic
+  const processedProducts = [...products]
+    .filter(p => {
+      const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === "All" || p.category === categoryFilter;
+      
+      let matchesStock = true;
+      if (stockFilter === "Out") matchesStock = p.stockQuantity <= 0;
+      if (stockFilter === "Low") matchesStock = p.stockQuantity > 0 && p.stockQuantity < 20;
+      if (stockFilter === "In") matchesStock = p.stockQuantity >= 20;
+
+      return matchesSearch && matchesCategory && matchesStock;
+    })
+    .sort((a, b) => {
+      if (sortOrder === "critical") {
+        return a.stockQuantity - b.stockQuantity;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
   return (
     <div className={styles.container}>
       <div className={styles.headerRow}>
         <div>
           <h1 className={styles.title}>Inventory Management</h1>
           <p className={styles.subtitle}>Monitor and quickly update stock levels across your catalog.</p>
+        </div>
+      </div>
+
+      <div className={styles.toolbar}>
+        <div className={styles.searchBox}>
+          <Search size={18} color="var(--text-secondary)" />
+          <input 
+            type="text" 
+            placeholder="Search by name or slug..." 
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <div className={styles.toolbarFilters}>
+          <select 
+            className={styles.filterSelect}
+            value={stockFilter}
+            onChange={e => setStockFilter(e.target.value)}
+          >
+            <option value="All">All Stock Levels</option>
+            <option value="In">In Stock (Healthy)</option>
+            <option value="Low">Low Stock (&lt;20)</option>
+            <option value="Out">Out of Stock</option>
+          </select>
+          <select 
+            className={styles.filterSelect}
+            value={categoryFilter}
+            onChange={e => setCategoryFilter(e.target.value)}
+          >
+            <option value="All">All Categories</option>
+            <option value="Drones">Drones</option>
+            <option value="Enterprise">Enterprise</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Services">Services</option>
+          </select>
+          <select 
+            className={styles.filterSelect}
+            value={sortOrder}
+            onChange={e => setSortOrder(e.target.value)}
+          >
+            <option value="critical">Sort: Lowest Stock First</option>
+            <option value="name">Sort: A-Z</option>
+          </select>
         </div>
       </div>
 
@@ -115,7 +185,9 @@ export default function AdminInventory() {
           <tbody>
             {loading ? (
               <tr><td colSpan={3} className={styles.loadingCell}>Loading inventory...</td></tr>
-            ) : products.map(product => (
+            ) : processedProducts.length === 0 ? (
+              <tr><td colSpan={3} className={styles.loadingCell}>No products found matching criteria.</td></tr>
+            ) : processedProducts.map(product => (
               <tr key={product.id}>
                 <td>
                   <div className={styles.productInfo}>

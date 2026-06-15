@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Package, MapPin, User, FileText, 
   Heart, Scale, Ticket, HeadphonesIcon, FileOutput, 
-  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X, Copy, Check, Clock
+  Coins, LogOut, ChevronLeft, ChevronRight, Eye, Save, Plus, Trash2, CreditCard, Settings, X, Copy, Check, Clock, Edit2
 } from "lucide-react";
 import styles from "./settings.module.css";
 import { createClient } from "@/utils/supabase/client";
@@ -16,6 +16,8 @@ import { useCompare } from "@/context/CompareContext";
 import Navigation from "@/components/Navigation";
 import CartSidebar from "@/components/CartSidebar";
 import { useRouter } from "next/navigation";
+import AddressModal from "./AddressModal";
+import PriceRequestModal from "./PriceRequestModal";
 
 const COUNTRY_CODES = [
   { code: '+91', name: 'India' },
@@ -69,6 +71,11 @@ export default function AccountSettings() {
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const [myTickets, setMyTickets] = useState<any[]>([]);
   const { compareList, removeFromCompare } = useCompare();
+  
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+
+  const [isPriceRequestModalOpen, setIsPriceRequestModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -238,25 +245,60 @@ export default function AccountSettings() {
     }
   };
 
-  const addAddress = async () => {
-    const street = prompt("Street Address:");
-    if (!street) return;
-    const city = prompt("City:");
-    const state = prompt("State:");
-    const zip = prompt("Zip:");
-    const country = prompt("Country:", "USA");
-    
+  const openAddAddress = () => {
+    setEditingAddress(null);
+    setIsAddressModalOpen(true);
+  };
+
+  const openEditAddress = (addr: any) => {
+    setEditingAddress(addr);
+    setIsAddressModalOpen(true);
+  };
+
+  const saveAddress = async (formData: any) => {
     try {
-      const res = await fetch("/api/addresses", {
-        method: "POST",
+      const payload = {
+        id: editingAddress ? editingAddress.id : undefined,
+        type: formData.type,
+        street: JSON.stringify({
+          street1: formData.street1,
+          street2: formData.street2,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          company: formData.company,
+          email: formData.email,
+          phone: formData.phone,
+          gst: formData.gst
+        }),
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        country: formData.country,
+        is_default: formData.is_default
+      };
+
+      const url = "/api/addresses" + (editingAddress ? `?id=${editingAddress.id}` : "");
+      const res = await fetch(url, {
+        method: editingAddress ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ street, city, state, zip, country, type: "Shipping", is_default: addresses.length === 0 })
+        body: JSON.stringify(payload)
       });
+      
       if (res.ok) {
-        const newAddress = await res.json();
-        setAddresses([newAddress, ...addresses]);
+        const savedData = await res.json();
+        if (editingAddress) {
+          setAddresses(addresses.map(a => a.id === savedData.id ? savedData : a));
+        } else {
+          setAddresses([savedData, ...addresses]);
+        }
+        setIsAddressModalOpen(false);
+      } else {
+        alert("Failed to save address");
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+      alert("Error saving address");
+    }
   };
 
   const removeAddress = async (id: string) => {
@@ -304,24 +346,28 @@ export default function AccountSettings() {
     } catch (e) {}
   };
 
-  const addPriceRequest = async () => {
-    const product_id = prompt("Enter Product ID for bulk pricing (e.g. 1):");
-    if (!product_id) return;
-    const quantity = parseInt(prompt("Quantity:") || "10", 10);
-    const requested_price = parseFloat(prompt("Requested Total Price:") || "0");
-    
+  const addPriceRequest = () => {
+    setIsPriceRequestModalOpen(true);
+  };
+
+  const handleSavePriceRequest = async (formData: any) => {
     try {
       const res = await fetch("/api/price-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product_id, quantity, requested_price })
+        body: JSON.stringify({ ...formData, customer_email: profile.email })
       });
       if (res.ok) {
         const newReq = await res.json();
         setPriceRequests([newReq, ...priceRequests]);
+        setIsPriceRequestModalOpen(false);
         alert("Request submitted!");
+      } else {
+        alert("Failed to submit request.");
       }
-    } catch (e) {}
+    } catch (e) {
+      alert("Error: " + e);
+    }
   };
 
   if (loading) {
@@ -421,22 +467,86 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2 className={styles.tabTitle} style={{ marginBottom: 0 }}>Saved Addresses</h2>
-        <button className={styles.addBtn} onClick={addAddress}><Plus size={16} /> Add New</button>
+        <button className={styles.addBtn} onClick={openAddAddress}><Plus size={16} /> Add New</button>
       </div>
-      <div className={styles.cardList}>
-        {addresses.length === 0 ? <p>No addresses found.</p> : addresses.map(addr => (
-          <div key={addr.id} className={styles.itemCard}>
-            <div className={styles.itemCardHeader}>
-              <span className={styles.itemType}>{addr.type}</span>
-              {addr.is_default && <span className={styles.defaultBadge}>DEFAULT</span>}
-            </div>
-            <div className={styles.itemDetail}>
-              {addr.street}, {addr.city}, {addr.state} {addr.zip} {addr.country}
-            </div>
-            <button className={styles.deleteBtn} onClick={() => removeAddress(addr.id)}><Trash2 size={16} /> Remove</button>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+        <div>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Billing Addresses</h3>
+          <div className={styles.cardList} style={{ display: 'flex', flexDirection: 'column' }}>
+            {addresses.filter(a => a.type === 'Billing').length === 0 ? <p>No billing addresses found.</p> : addresses.filter(a => a.type === 'Billing').map(addr => {
+              let parsedStreet = addr.street;
+              let parsedObj = null;
+              try {
+                if (addr.street.startsWith('{')) {
+                  parsedObj = JSON.parse(addr.street);
+                  parsedStreet = parsedObj.street1 + (parsedObj.street2 ? ', ' + parsedObj.street2 : '');
+                }
+              } catch(e) {}
+              
+              return (
+                <div key={addr.id} className={styles.itemCard}>
+                  <div className={styles.itemCardHeader}>
+                    <span className={styles.itemType}>{addr.type}</span>
+                    {addr.is_default && <span className={styles.defaultBadge}>DEFAULT</span>}
+                  </div>
+                  <div className={styles.itemDetail}>
+                    {parsedObj?.firstName && <strong>{parsedObj.firstName} {parsedObj.lastName}</strong>}
+                    {parsedObj?.firstName && <br />}
+                    {parsedStreet}, {addr.city}, {addr.state} {addr.zip} {addr.country}
+                    {parsedObj?.phone && <div>Phone: {parsedObj.phone}</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className={styles.deleteBtn} style={{ background: 'transparent', color: 'var(--text-primary)' }} onClick={() => openEditAddress(addr)}><Edit2 size={16} /> Edit</button>
+                    <button className={styles.deleteBtn} onClick={() => removeAddress(addr.id)}><Trash2 size={16} /> Remove</button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ))}
+        </div>
+        
+        <div>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Shipping Addresses</h3>
+          <div className={styles.cardList} style={{ display: 'flex', flexDirection: 'column' }}>
+            {addresses.filter(a => a.type === 'Shipping').length === 0 ? <p>No shipping addresses found.</p> : addresses.filter(a => a.type === 'Shipping').map(addr => {
+              let parsedStreet = addr.street;
+              let parsedObj = null;
+              try {
+                if (addr.street.startsWith('{')) {
+                  parsedObj = JSON.parse(addr.street);
+                  parsedStreet = parsedObj.street1 + (parsedObj.street2 ? ', ' + parsedObj.street2 : '');
+                }
+              } catch(e) {}
+              
+              return (
+                <div key={addr.id} className={styles.itemCard}>
+                  <div className={styles.itemCardHeader}>
+                    <span className={styles.itemType}>{addr.type}</span>
+                    {addr.is_default && <span className={styles.defaultBadge}>DEFAULT</span>}
+                  </div>
+                  <div className={styles.itemDetail}>
+                    {parsedObj?.firstName && <strong>{parsedObj.firstName} {parsedObj.lastName}</strong>}
+                    {parsedObj?.firstName && <br />}
+                    {parsedStreet}, {addr.city}, {addr.state} {addr.zip} {addr.country}
+                    {parsedObj?.phone && <div>Phone: {parsedObj.phone}</div>}
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className={styles.deleteBtn} style={{ background: 'transparent', color: 'var(--text-primary)' }} onClick={() => openEditAddress(addr)}><Edit2 size={16} /> Edit</button>
+                    <button className={styles.deleteBtn} onClick={() => removeAddress(addr.id)}><Trash2 size={16} /> Remove</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
+      
+      <AddressModal 
+        isOpen={isAddressModalOpen} 
+        onClose={() => setIsAddressModalOpen(false)} 
+        onSave={saveAddress} 
+        address={editingAddress} 
+      />
     </motion.div>
   );
 
@@ -531,18 +641,35 @@ export default function AccountSettings() {
         <button className={styles.addBtn} onClick={addPriceRequest}><Plus size={16} /> New Request</button>
       </div>
       <div className={styles.cardList}>
-        {priceRequests.length === 0 ? <p>No price requests found.</p> : priceRequests.map(req => (
-          <div key={req.id} className={styles.itemCard}>
-            <div className={styles.itemCardHeader}>
-              <span className={styles.itemType}>Product ID: {req.product_id} (Bulk Order: {req.quantity} units)</span>
-              <span className={styles.defaultBadge} style={{ background: req.status === 'Pending' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: req.status === 'Pending' ? '#f59e0b' : '#10b981' }}>{req.status.toUpperCase()}</span>
+        {priceRequests.length === 0 ? <p>No price requests found.</p> : priceRequests.map(req => {
+          const product = allProducts.find(p => p.id === req.product_id);
+          const productName = product ? product.name : `Product ID: ${req.product_id}`;
+          return (
+            <div key={req.id} className={styles.itemCard}>
+              <div className={styles.itemCardHeader}>
+                <span className={styles.itemType}>{productName} (Bulk Order: {req.quantity} units)</span>
+                <span className={styles.defaultBadge} style={{ background: req.status === 'Pending' ? 'rgba(245, 158, 11, 0.1)' : req.status === 'Rejected' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: req.status === 'Pending' ? '#f59e0b' : req.status === 'Rejected' ? '#ef4444' : '#10b981' }}>{req.status.toUpperCase()}</span>
+              </div>
+              <div className={styles.itemDetail}>
+                Requested Price: {formatCurrency(req.requested_price)} • Submitted: {new Date(req.date).toLocaleDateString()}
+              </div>
+              {req.admin_remark && (
+                <div style={{ marginTop: '12px', padding: '10px 14px', background: 'var(--background-secondary)', borderLeft: '3px solid #3b82f6', borderRadius: '4px', fontSize: '0.9rem' }}>
+                  <div style={{ fontWeight: 600, color: '#3b82f6', marginBottom: '4px' }}>Admin Response:</div>
+                  <div style={{ color: 'var(--text-primary)' }}>{req.admin_remark}</div>
+                </div>
+              )}
             </div>
-            <div className={styles.itemDetail}>
-              Requested Price: {formatCurrency(req.requested_price)} • Submitted: {new Date(req.date).toLocaleDateString()}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      <PriceRequestModal 
+        isOpen={isPriceRequestModalOpen}
+        onClose={() => setIsPriceRequestModalOpen(false)}
+        onSave={handleSavePriceRequest}
+        products={allProducts}
+      />
     </motion.div>
   );
 

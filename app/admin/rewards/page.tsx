@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "../dashboard.module.css";
-import { Star, Gift, Users, TrendingUp, Coins } from "lucide-react";
+import { Star, Gift, Users, TrendingUp, Coins, ChevronDown, ChevronUp, Clock, Tag } from "lucide-react";
 
 interface RewardsConfig {
   purchases_multiplier: number;
@@ -16,6 +16,17 @@ interface RewardsKPIs {
   active_members: number;
 }
 
+interface Transaction {
+  id: string;
+  date: string;
+  status: string;
+  total: number;
+  points_earned: number;
+  points_redeemed: number;
+  discount_code: string | null;
+  discount_amount: number;
+}
+
 interface CustomerPoints {
   id: string;
   name: string;
@@ -24,6 +35,7 @@ interface CustomerPoints {
   points_redeemed: number;
   points_balance: number;
   status: string;
+  history?: Transaction[];
 }
 
 const avatarColors = [
@@ -39,6 +51,7 @@ export default function RewardsAdmin() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/rewards")
@@ -173,14 +186,20 @@ export default function RewardsAdmin() {
                 ) : filtered.map((c, i) => {
                   const pct = c.points_issued > 0 ? Math.round((c.points_redeemed / c.points_issued) * 100) : 0;
                   const balanceColor = c.points_balance > 0 ? "#10b981" : c.points_balance === 0 ? "var(--text-secondary)" : "#ef4444";
+                  const expanded = expandedId === c.id;
+                  
                   return (
-                    <tr key={c.id} style={{
-                      borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.06))",
-                      transition: "background 0.15s",
-                    }}
-                      onMouseEnter={e => (e.currentTarget.style.background = "var(--background-secondary, rgba(0,0,0,0.03))")}
-                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                    >
+                    <React.Fragment key={c.id}>
+                      <tr style={{
+                        borderBottom: expanded ? "none" : "1px solid var(--border-color, rgba(0,0,0,0.06))",
+                        background: expanded ? "var(--background-secondary, rgba(0,0,0,0.02))" : "transparent",
+                        transition: "background 0.15s",
+                        cursor: "pointer",
+                      }}
+                        onClick={() => setExpandedId(expanded ? null : c.id)}
+                        onMouseEnter={e => { if (!expanded) e.currentTarget.style.background = "var(--background-secondary, rgba(0,0,0,0.03))"; }}
+                        onMouseLeave={e => { if (!expanded) e.currentTarget.style.background = "transparent"; }}
+                      >
                       {/* # */}
                       <td style={{ padding: "12px", textAlign: "center", color: "var(--text-secondary)", fontWeight: 600 }}>
                         {i + 1}
@@ -254,17 +273,72 @@ export default function RewardsAdmin() {
 
                       {/* Status */}
                       <td style={{ padding: "12px", textAlign: "right" }}>
-                        <span style={{
-                          background: c.status === "Active" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
-                          color: c.status === "Active" ? "#10b981" : "#ef4444",
-                          border: `1px solid ${c.status === "Active" ? "#10b98133" : "#ef444433"}`,
-                          padding: "2px 10px", borderRadius: 20,
-                          fontSize: 11, fontWeight: 600,
-                        }}>
-                          {c.status}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 12 }}>
+                          <span style={{
+                            background: c.status === "Active" ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                            color: c.status === "Active" ? "#10b981" : "#ef4444",
+                            border: `1px solid ${c.status === "Active" ? "#10b98133" : "#ef444433"}`,
+                            padding: "2px 10px", borderRadius: 20,
+                            fontSize: 11, fontWeight: 600,
+                          }}>
+                            {c.status}
+                          </span>
+                          <div style={{ color: "var(--text-secondary)" }}>
+                            {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          </div>
+                        </div>
                       </td>
                     </tr>
+                    
+                    {/* Expanded History Panel */}
+                    {expanded && (
+                      <tr style={{ background: "var(--background-secondary, rgba(0,0,0,0.02))", borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.08))" }}>
+                        <td colSpan={6} style={{ padding: 0 }}>
+                          <div style={{ borderTop: "1px solid var(--border-color, rgba(0,0,0,0.06))", padding: "16px 24px" }}>
+                            <h4 style={{ margin: "0 0 12px 0", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6 }}>
+                              <Clock size={14} /> Transaction History
+                            </h4>
+                            
+                            {!c.history || c.history.length === 0 ? (
+                              <div style={{ padding: 16, textAlign: "center", color: "var(--text-secondary)", fontSize: 13, background: "rgba(0,0,0,0.02)", borderRadius: 8, border: "1px dashed var(--border-color, rgba(0,0,0,0.1))" }}>
+                                No points or coupon history found for this customer.
+                              </div>
+                            ) : (
+                              <div style={{ background: "var(--background-primary)", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border-color, rgba(0,0,0,0.08))" }}>
+                                <div style={{ display: "grid", gridTemplateColumns: "180px 1fr 120px 120px", gap: 16, padding: "10px 16px", borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.06))", fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", background: "rgba(0,0,0,0.02)" }}>
+                                  <div>Date / Time</div>
+                                  <div>Details</div>
+                                  <div style={{ textAlign: "right" }}>Points Earned</div>
+                                  <div style={{ textAlign: "right" }}>Points / Coupon Used</div>
+                                </div>
+                                {c.history.map(tx => (
+                                  <div key={tx.id} style={{ display: "grid", gridTemplateColumns: "180px 1fr 120px 120px", gap: 16, padding: "12px 16px", borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.04))", fontSize: 12, alignItems: "center" }}>
+                                    <div style={{ color: "var(--text-secondary)" }}>
+                                      {new Date(tx.date).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>Order {tx.id}</div>
+                                      {tx.discount_code && (
+                                        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, marginTop: 4, fontSize: 11, background: "rgba(59,130,246,0.1)", color: "#3b82f6", padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(59,130,246,0.2)" }}>
+                                          <Tag size={10} /> Used Code: {tx.discount_code} (-₹{tx.discount_amount})
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div style={{ textAlign: "right", fontWeight: 700, color: tx.points_earned > 0 ? "#f59e0b" : "var(--text-secondary)" }}>
+                                      {tx.points_earned > 0 ? `+${tx.points_earned} ★` : "-"}
+                                    </div>
+                                    <div style={{ textAlign: "right", fontWeight: 700, color: tx.points_redeemed > 0 ? "#ef4444" : "var(--text-secondary)" }}>
+                                      {tx.points_redeemed > 0 ? `-${tx.points_redeemed} pts` : "-"}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

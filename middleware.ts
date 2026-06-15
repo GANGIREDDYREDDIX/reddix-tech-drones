@@ -89,7 +89,6 @@ export async function middleware(request: NextRequest) {
     // 2a. Strict Admin-Only APIs (All Methods Locked)
     const strictAdminApiPrefixes = [
       '/api/analytics',
-      '/api/customers',
       '/api/staff',
       '/api/settings',
       '/api/rewards',
@@ -126,6 +125,7 @@ export async function middleware(request: NextRequest) {
 
     // 2c. Authenticated User APIs (All Methods Locked to logged-in users)
     const authenticatedApiPrefixes = [
+      '/api/customers',
       '/api/orders',
       '/api/addresses',
       '/api/wishlist'

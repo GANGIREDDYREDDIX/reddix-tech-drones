@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, X, ChevronDown, ChevronUp, Users, Tag, Calendar, TrendingUp } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, ChevronUp, Users, Tag, Calendar, TrendingUp, Search, MoreHorizontal, Ban, Clock } from "lucide-react";
 import styles from "./discounts.module.css";
 import { useCurrency } from "@/context/CurrencyContext";
 
@@ -32,35 +32,7 @@ const STATUS_COLORS: Record<string, string> = {
   shipped: "#6366f1", cancelled: "#ef4444", restocked: "#8b5cf6",
 };
 
-function ClaimerRow({ c, formatCurrency }: { c: Claimer; formatCurrency: (v: number) => string }) {
-  const color = STATUS_COLORS[c.orderStatus.toLowerCase()] || "#94a3b8";
-  return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 140px 110px 90px 80px",
-      gap: 12, padding: "10px 16px",
-      borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.06))",
-      alignItems: "center", fontSize: 12,
-    }}>
-      <div>
-        <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.customerName}</div>
-        <div style={{ color: "var(--text-secondary)", fontSize: 11 }}>{c.customerEmail}</div>
-      </div>
-      <div style={{ color: "var(--text-secondary)" }}>
-        {new Date(c.orderDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-      </div>
-      <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{formatCurrency(c.orderTotal)}</div>
-      <div style={{ color: "#10b981", fontWeight: 700 }}>-{formatCurrency(c.discountAmount)}</div>
-      <div>
-        <span style={{
-          background: `${color}20`, color,
-          border: `1px solid ${color}44`,
-          padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 600,
-        }}>{c.orderStatus}</span>
-      </div>
-    </div>
-  );
-}
+
 
 export default function AdminDiscounts() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
@@ -68,10 +40,16 @@ export default function AdminDiscounts() {
   const { formatCurrency, loading: currencyLoading } = useCurrency();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Codes");
   const [formData, setFormData] = useState({
     code: "", type: "percentage", value: 10,
     expiry: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 16),
   });
+
+  const closeMenu = () => setMenuOpenId(null);
 
   const fetchDiscounts = async () => {
     try {
@@ -88,9 +66,25 @@ export default function AdminDiscounts() {
   useEffect(() => { fetchDiscounts(); }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this discount code?")) return;
+    setMenuOpenId(null);
+    if (!confirm("Are you sure you want to delete this discount code?")) return;
+    setProcessingId(id);
     await fetch(`/api/discounts/${id}`, { method: "DELETE" });
     fetchDiscounts();
+    setProcessingId(null);
+  };
+
+  const handleExpire = async (id: string) => {
+    setMenuOpenId(null);
+    if (!confirm("Are you sure you want to instantly expire this code?")) return;
+    setProcessingId(id);
+    await fetch(`/api/discounts/${id}`, { 
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expiry: new Date().toISOString(), status: "Expired" })
+    });
+    fetchDiscounts();
+    setProcessingId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,8 +112,21 @@ export default function AdminDiscounts() {
   const totalSavings = discounts.reduce((sum, d) =>
     sum + d.claimers.reduce((s, c) => s + (c.discountAmount || 0), 0), 0);
 
+  const filteredDiscounts = discounts.filter(d => {
+    const searchMatch = d.code.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let statusMatch = true;
+    const expired = isExpired(d.expiry);
+    const effectiveStatus = expired ? "Expired" : d.status;
+    
+    if (statusFilter === "Active") statusMatch = effectiveStatus === "Active";
+    else if (statusFilter === "Expired") statusMatch = effectiveStatus === "Expired";
+
+    return searchMatch && statusMatch;
+  });
+
   return (
-    <div className={styles.container}>
+    <div className={styles.container} onClick={closeMenu}>
       {/* Header */}
       <div className={styles.headerRow}>
         <div>
@@ -159,16 +166,56 @@ export default function AdminDiscounts() {
       )}
 
       {/* Discounts Table */}
-      <div className={styles.tableCard} style={{ padding: 0, overflow: "hidden" }}>
+      <div className={styles.tableCard} style={{ padding: 0, overflow: "visible" }}>
+        
+        {/* Toolbar */}
+        <div className={styles.toolbar}>
+          <div className={styles.searchBox}>
+            <Search size={18} color="var(--text-secondary)" />
+            <input 
+              type="text" 
+              placeholder="Search by discount code..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className={styles.toolbarFilters}>
+            <select 
+              className={styles.filterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="All Codes">All Codes</option>
+              <option value="Active">Active</option>
+              <option value="Expired">Expired</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Table Header - FIXED */}
+        {!loading && filteredDiscounts.length > 0 && (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "180px 100px 130px 100px 70px 140px 1fr",
+            gap: 12, padding: "16px 20px",
+            borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.08))",
+            background: "var(--background-secondary, rgba(0,0,0,0.02))",
+          }}>
+            {["Discount Code", "Type", "Value", "Status", "Uses", "Expiry", ""].map((h, i) => (
+              <div key={i} style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", textAlign: i === 6 ? "right" : "left" }}>{h}</div>
+            ))}
+          </div>
+        )}
+
         {loading ? (
           <div style={{ padding: 48, textAlign: "center", color: "var(--text-secondary)" }}>Loading discounts...</div>
-        ) : discounts.length === 0 ? (
+        ) : filteredDiscounts.length === 0 ? (
           <div style={{ padding: 48, textAlign: "center", color: "var(--text-secondary)" }}>
             <Tag size={32} style={{ marginBottom: 8, opacity: 0.3 }} />
-            <p>No discount codes yet. Create your first one!</p>
+            <p>No discount codes found.</p>
           </div>
         ) : (
-          discounts.map(discount => {
+          filteredDiscounts.map(discount => {
             const expired = isExpired(discount.expiry);
             const expanded = expandedId === discount.id;
             const effectiveStatus = expired ? "Expired" : discount.status;
@@ -178,7 +225,7 @@ export default function AdminDiscounts() {
                 {/* Main row */}
                 <div style={{
                   display: "grid",
-                  gridTemplateColumns: "180px 100px 80px 100px 70px 140px 1fr",
+                  gridTemplateColumns: "180px 100px 130px 100px 70px 140px 1fr",
                   gap: 12, padding: "16px 20px", alignItems: "center",
                   background: expanded ? "var(--background-secondary, rgba(0,0,0,0.02))" : "transparent",
                   transition: "background 0.15s",
@@ -226,91 +273,119 @@ export default function AdminDiscounts() {
                   </div>
 
                   {/* Actions */}
-                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
-                    {discount.realUsageCount > 0 && (
-                      <button
-                        onClick={() => setExpandedId(expanded ? null : discount.id)}
-                        style={{
-                          display: "flex", alignItems: "center", gap: 5,
-                          padding: "5px 12px", borderRadius: 6,
-                          background: "rgba(59,130,246,0.1)", color: "#3b82f6",
-                          border: "1px solid rgba(59,130,246,0.2)",
-                          cursor: "pointer", fontSize: 12, fontWeight: 600,
-                        }}
-                      >
-                        <Users size={13} />
-                        {discount.realUsageCount} claimer{discount.realUsageCount !== 1 ? "s" : ""}
-                        {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-                      </button>
-                    )}
+                  <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", alignItems: "center" }}>
+                    {/* Removed realUsageCount > 0 condition so button is always visible */}
                     <button
-                      className={`${styles.iconBtn} ${styles.danger}`}
-                      onClick={() => handleDelete(discount.id)}
-                      title="Delete Code"
+                      onClick={() => setExpandedId(expanded ? null : discount.id)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 5,
+                        padding: "5px 12px", borderRadius: 6,
+                        background: "rgba(59,130,246,0.1)", color: "#3b82f6",
+                        border: "1px solid rgba(59,130,246,0.2)",
+                        cursor: "pointer", fontSize: 12, fontWeight: 600,
+                      }}
                     >
-                      <Trash2 size={15} />
+                      <Users size={13} />
+                      {discount.realUsageCount} claimer{discount.realUsageCount !== 1 ? "s" : ""}
+                      {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                     </button>
+                    
+                    {processingId === discount.id ? (
+                      <span className={styles.loadingCell}>...</span>
+                    ) : (
+                      <div className={styles.actionMenuContainer} onClick={e => e.stopPropagation()}>
+                        <button 
+                          className={styles.actionMenuBtn}
+                          onClick={() => setMenuOpenId(menuOpenId === discount.id ? null : discount.id)}
+                        >
+                          Manage <MoreHorizontal size={14} />
+                        </button>
+                        
+                        {menuOpenId === discount.id && (
+                          <div className={styles.dropdownMenu}>
+                            {!expired && (
+                              <button className={styles.dropdownItem} onClick={() => handleExpire(discount.id)}>
+                                <Ban size={14} /> Expire Now
+                              </button>
+                            )}
+                            <button className={`${styles.dropdownItem} ${styles.danger}`} onClick={() => handleDelete(discount.id)}>
+                              <Trash2 size={14} /> Delete Record
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Expanded claimers panel */}
-                {expanded && discount.claimers.length > 0 && (
-                  <div style={{ background: "var(--background-secondary, rgba(0,0,0,0.02))", borderTop: "1px solid var(--border-color, rgba(0,0,0,0.06))" }}>
-                    {/* Column headers */}
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 140px 110px 90px 80px",
-                      gap: 12, padding: "8px 16px",
-                      borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.08))",
-                    }}>
-                      {["Customer", "Order Date", "Order Total", "Discount", "Status"].map((h, i) => (
-                        <div key={i} style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</div>
-                      ))}
-                    </div>
-                    {discount.claimers.map((c, i) => (
-                      <ClaimerRow key={i} c={c} formatCurrency={formatCurrency} />
-                    ))}
-                    {/* Totals */}
-                    <div style={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 140px 110px 90px 80px",
-                      gap: 12, padding: "10px 16px",
-                      borderTop: "2px solid var(--border-color, rgba(0,0,0,0.1))",
-                      background: "var(--background-primary)",
-                    }}>
-                      <div style={{ fontWeight: 700, fontSize: 12, color: "var(--text-secondary)" }}>
-                        TOTAL ({discount.claimers.length} orders)
+                {expanded && (
+                  <div style={{ background: "var(--background-secondary, rgba(0,0,0,0.02))", borderTop: "1px solid var(--border-color, rgba(0,0,0,0.06))", padding: "16px 24px" }}>
+                    <h4 style={{ margin: "0 0 12px 0", fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6 }}>
+                      <Clock size={14} /> Claim History
+                    </h4>
+                    
+                    {discount.claimers.length === 0 ? (
+                      <div style={{ padding: 16, textAlign: "center", color: "var(--text-secondary)", fontSize: 13, background: "rgba(0,0,0,0.02)", borderRadius: 8, border: "1px dashed var(--border-color, rgba(0,0,0,0.1))" }}>
+                        No one has claimed this discount code yet.
                       </div>
-                      <div />
-                      <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                        {!currencyLoading ? formatCurrency(discount.claimers.reduce((s, c) => s + c.orderTotal, 0)) : "..."}
+                    ) : (
+                      <div style={{ background: "var(--background-primary)", borderRadius: 8, overflow: "hidden", border: "1px solid var(--border-color, rgba(0,0,0,0.08))" }}>
+                      {/* Column headers */}
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 180px 110px 90px 80px",
+                        gap: 12, padding: "10px 16px",
+                        borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.06))",
+                        fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em", background: "rgba(0,0,0,0.02)"
+                      }}>
+                        {["Customer", "Order Date", "Order Total", "Discount", "Status"].map((h, i) => (
+                          <div key={i}>{h}</div>
+                        ))}
                       </div>
-                      <div style={{ fontWeight: 700, color: "#10b981" }}>
-                        -{!currencyLoading ? formatCurrency(discount.claimers.reduce((s, c) => s + (c.discountAmount || 0), 0)) : "..."}
+                      
+                      {/* Rows */}
+                      {discount.claimers.map((c, i) => {
+                        const color = STATUS_COLORS[c.orderStatus.toLowerCase()] || "#94a3b8";
+                        return (
+                          <div key={i} style={{
+                            display: "grid", gridTemplateColumns: "1fr 180px 110px 90px 80px", gap: 12, padding: "12px 16px",
+                            borderBottom: "1px solid var(--border-color, rgba(0,0,0,0.04))", fontSize: 12, alignItems: "center"
+                          }}>
+                            <div>
+                              <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.customerName}</div>
+                              <div style={{ color: "var(--text-secondary)", fontSize: 11 }}>{c.customerEmail}</div>
+                            </div>
+                            <div style={{ color: "var(--text-secondary)" }}>
+                              {new Date(c.orderDate).toLocaleString("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </div>
+                            <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{!currencyLoading ? formatCurrency(c.orderTotal) : "..."}</div>
+                            <div style={{ color: "#10b981", fontWeight: 700 }}>-{!currencyLoading ? formatCurrency(c.discountAmount) : "..."}</div>
+                            <div>
+                              <span style={{ background: `${color}20`, color, border: `1px solid ${color}44`, padding: "2px 8px", borderRadius: 20, fontSize: 10, fontWeight: 600 }}>{c.orderStatus}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {/* Totals Footer */}
+                      <div style={{
+                        display: "grid", gridTemplateColumns: "1fr 180px 110px 90px 80px", gap: 12, padding: "10px 16px",
+                        background: "rgba(0,0,0,0.02)", borderTop: "1px solid var(--border-color, rgba(0,0,0,0.08))"
+                      }}>
+                        <div style={{ fontWeight: 700, fontSize: 12, color: "var(--text-secondary)" }}>TOTAL ({discount.claimers.length} orders)</div>
+                        <div />
+                        <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{!currencyLoading ? formatCurrency(discount.claimers.reduce((s, c) => s + c.orderTotal, 0)) : "..."}</div>
+                        <div style={{ fontWeight: 700, color: "#10b981" }}>-{!currencyLoading ? formatCurrency(discount.claimers.reduce((s, c) => s + (c.discountAmount || 0), 0)) : "..."}</div>
+                        <div />
                       </div>
-                      <div />
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
             );
           })
-        )}
-
-        {/* Table header when there are discounts */}
-        {!loading && discounts.length > 0 && (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "180px 100px 80px 100px 70px 140px 1fr",
-            gap: 12, padding: "10px 20px",
-            borderTop: "1px solid var(--border-color, rgba(0,0,0,0.08))",
-            background: "var(--background-secondary, rgba(0,0,0,0.02))",
-            order: -1,
-          }}>
-            {["Discount Code", "Type", "Value", "Status", "Uses", "Expiry", ""].map((h, i) => (
-              <div key={i} style={{ fontSize: 10, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</div>
-            ))}
-          </div>
         )}
       </div>
 

@@ -49,18 +49,38 @@ export async function GET() {
       });
     }
     
+    // Fetch all orders to build history
+    const { data: orders } = await supabase.from('orders').select('id, date, status, total, customer');
+    
     return NextResponse.json({
       config: finalConfig,
       kpis: kpis,
-      customers: (customers || []).map(c => ({
-        id: c.id,
-        name: c.name,
-        email: c.email,
-        points_issued: c.points_issued || 0,
-        points_redeemed: c.points_redeemed || 0,
-        points_balance: (c.points_issued || 0) - (c.points_redeemed || 0),
-        status: c.status,
-      }))
+      customers: (customers || []).map(c => {
+        const history = (orders || [])
+          .filter(o => o.customer && o.customer.email === c.email && (o.customer.points_earned > 0 || o.customer.points_redeemed > 0 || o.customer.discount_code))
+          .map(o => ({
+            id: o.id,
+            date: o.date,
+            status: o.status,
+            total: o.total,
+            points_earned: o.customer.points_earned || 0,
+            points_redeemed: o.customer.points_redeemed || 0,
+            discount_code: o.customer.discount_code || null,
+            discount_amount: o.customer.discount_amount || 0
+          }))
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        return {
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          points_issued: c.points_issued || 0,
+          points_redeemed: c.points_redeemed || 0,
+          points_balance: (c.points_issued || 0) - (c.points_redeemed || 0),
+          status: c.status,
+          history: history
+        };
+      })
     });
   } catch (error) {
     console.error('Failed to read rewards config:', error);

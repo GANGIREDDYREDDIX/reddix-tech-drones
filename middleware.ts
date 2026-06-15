@@ -68,15 +68,20 @@ export async function middleware(request: NextRequest) {
 
     const AUTHORIZED_EMAILS = process.env.AUTHORIZED_EMAILS 
       ? process.env.AUTHORIZED_EMAILS.split(',').map(e => e.trim().toLowerCase()) 
-      : ['chintureddy6165@gmail.com', 'reddix.lpu@gmail.com', 'yashkansal321@gmail.com'];
+      : ['chintureddy6165@gmail.com', 'reddix.lpu@gmail.com', 'yashkansal321@gmail.com', 'iamsiddhartha9@gmail.com'];
 
     const isAdmin = user?.email && AUTHORIZED_EMAILS.includes(user.email.toLowerCase());
 
-    // --- 1. Protect /admin UI Routes ---
-    if (pathname.startsWith('/admin')) {
-      if (!isAdmin) {
-        return NextResponse.redirect(new URL('/login', request.url));
-      }
+    // --- 1. Protect UI Routes (Admin & Customer) ---
+    const isCustomerRoute = ['/orders', '/settings', '/complete-profile'].some(prefix => pathname.startsWith(prefix));
+    const isAdminRoute = pathname.startsWith('/admin');
+
+    if (isAdminRoute && !isAdmin) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+
+    if (isCustomerRoute && !user) {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
 
     // --- 2. Protect Admin API Routes ---
@@ -97,6 +102,16 @@ export async function middleware(request: NextRequest) {
           { status: 401, headers: { 'content-type': 'application/json' } }
         );
       }
+    }
+
+    // --- 3. Prevent Caching on All Protected Routes ---
+    // If we are in an authenticated area (admin or user dashboard), make sure the browser doesn't cache the page.
+    // This prevents the user from clicking the "Back" button after logout and seeing the protected page from bfcache.
+    if (isAdminRoute || isCustomerRoute) {
+      supabaseResponse.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      supabaseResponse.headers.set('Pragma', 'no-cache');
+      supabaseResponse.headers.set('Expires', '0');
+      supabaseResponse.headers.set('Surrogate-Control', 'no-store');
     }
 
     return supabaseResponse;

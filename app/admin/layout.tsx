@@ -3,7 +3,7 @@ import { useEffect } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, Bell, Search, Tag, ClipboardList, RotateCcw, Star, ShoppingBag, MessageSquare, Shield, FileText } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, LogOut, Tag, ClipboardList, RotateCcw, Star, ShoppingBag, MessageSquare, Shield, FileText } from "lucide-react";
 import styles from "./admin.module.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import { useCurrency } from "@/context/CurrencyContext";
@@ -12,24 +12,64 @@ import NotificationsDropdown from "@/components/NotificationsDropdown";
 
 import { createClient } from '@/utils/supabase/client';
 
+const AUTHORIZED_EMAILS = [
+  'chintureddy6165@gmail.com',
+  'reddix.lpu@gmail.com',
+  'yashkansal321@gmail.com',
+  'iamsiddhartha9@gmail.com',
+];
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currency, setCurrency, loading } = useCurrency();
 
-  // ✅ FIX: Detect when the page is restored from the browser's Back-Forward Cache
-  // (bfcache) and immediately redirect to login. This is the only reliable way
-  // to prevent the back-button exploit after logout.
+  // ✅ BULLETPROOF FIX: Triple-layer protection.
+  //
+  // Layer 1 (useEffect on mount): Verifies real Supabase auth on every page load.
+  //   - Catches direct URL access, expired sessions, and normal bfcache restores.
+  //
+  // Layer 2 (pageshow event): Fires specifically when a page is restored from
+  //   bfcache. Re-checks auth since the session may have expired.
+  //
+  // Layer 3 (visibilitychange event): Catches the case where the user switches
+  //   tabs and back, and their session expired in the meantime.
+  //
+  // All three layers use verifyAuth() which hits Supabase directly — no stale
+  // data, no cookie tricks. If auth fails, window.location.replace() does a
+  // hard redirect that removes the admin page from the history stack entirely.
   useEffect(() => {
-    const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        // Page was restored from bfcache — kick user to login immediately
+    const verifyAuth = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        const isAdmin = user?.email && AUTHORIZED_EMAILS.includes(user.email.toLowerCase());
+        if (!isAdmin) {
+          window.location.replace('/login');
+        }
+      } catch {
         window.location.replace('/login');
       }
     };
+
+    verifyAuth(); // Layer 1: on every mount
+
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) verifyAuth(); // Layer 2: bfcache restore
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') verifyAuth(); // Layer 3: tab switch back
+    };
+
     window.addEventListener('pageshow', handlePageShow);
-    return () => window.removeEventListener('pageshow', handlePageShow);
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [pathname]);
 
   // Don't show the shell on the login page
   if (pathname === '/admin/login' || pathname === '/login') {
@@ -39,9 +79,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    // ✅ FIX: Use window.location.replace (hard redirect) so the admin page is
-    // completely removed from the browser's history stack. router.push() would
-    // have left it in the bfcache.
+    // Hard replace removes the admin page from history entirely
     window.location.replace('/login');
   };
 

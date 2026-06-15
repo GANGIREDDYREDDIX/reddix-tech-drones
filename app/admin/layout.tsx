@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -16,6 +17,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { currency, setCurrency, loading } = useCurrency();
 
+  // ✅ FIX: Detect when the page is restored from the browser's Back-Forward Cache
+  // (bfcache) and immediately redirect to login. This is the only reliable way
+  // to prevent the back-button exploit after logout.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // Page was restored from bfcache — kick user to login immediately
+        window.location.replace('/login');
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   // Don't show the shell on the login page
   if (pathname === '/admin/login' || pathname === '/login') {
     return <>{children}</>;
@@ -24,7 +39,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleLogout = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push('/login');
+    // ✅ FIX: Use window.location.replace (hard redirect) so the admin page is
+    // completely removed from the browser's history stack. router.push() would
+    // have left it in the bfcache.
+    window.location.replace('/login');
   };
 
   const navItems = [

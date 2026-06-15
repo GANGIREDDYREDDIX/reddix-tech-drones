@@ -1,0 +1,12 @@
+[
+  {
+    "id": "REQ-54187",
+    "customer_email": "chintureddy6165@gmail.com",
+    "product_id": "test",
+    "quantity": 10,
+    "requested_price": 500,
+    "notes": "",
+    "status": "Pending",
+    "date": "2026-06-15T16:41:00.384Z"
+  }
+]

@@ -77,7 +77,6 @@ export async function POST(request: Request) {
         status: 'Active',
         usageCount: 0,
         expiry: newDiscount.expiry || null,
-        maxUses: newDiscount.maxUses || null,
       })
       .select()
       .single();

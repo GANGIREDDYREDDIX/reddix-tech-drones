@@ -23,7 +23,6 @@ interface Discount {
   status: string;
   usageCount: number;
   expiry: string;
-  maxUses?: number;
   claimers: Claimer[];
   realUsageCount: number;
 }
@@ -70,7 +69,7 @@ export default function AdminDiscounts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    code: "", type: "percentage", value: 10, maxUses: "",
+    code: "", type: "percentage", value: 10,
     expiry: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 16),
   });
 
@@ -100,7 +99,6 @@ export default function AdminDiscounts() {
       const payload = {
         ...formData,
         expiry: new Date(formData.expiry).toISOString(),
-        maxUses: formData.maxUses ? parseInt(formData.maxUses) : null,
       };
       const res = await fetch("/api/discounts", {
         method: "POST",
@@ -109,7 +107,7 @@ export default function AdminDiscounts() {
       });
       if (res.ok) {
         setIsModalOpen(false);
-        setFormData({ code: "", type: "percentage", value: 10, maxUses: "", expiry: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 16) });
+        setFormData({ code: "", type: "percentage", value: 10, expiry: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString().slice(0, 16) });
         fetchDiscounts();
       }
     } catch (e) { console.error(e); }
@@ -219,9 +217,6 @@ export default function AdminDiscounts() {
                     <span style={{ fontWeight: 700, color: discount.realUsageCount > 0 ? "#3b82f6" : "var(--text-secondary)" }}>
                       {discount.realUsageCount}
                     </span>
-                    {discount.maxUses && (
-                      <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>/{discount.maxUses}</span>
-                    )}
                   </div>
 
                   {/* Expiry */}
@@ -353,13 +348,7 @@ export default function AdminDiscounts() {
                     onChange={e => setFormData({ ...formData, value: parseFloat(e.target.value) })} />
                 </div>
               </div>
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label>Max Uses (optional)</label>
-                  <input type="number" min={1} placeholder="Unlimited"
-                    value={formData.maxUses}
-                    onChange={e => setFormData({ ...formData, maxUses: e.target.value })} />
-                </div>
+              <div style={{ display: "grid", gap: 16 }}>
                 <div className={styles.formGroup}>
                   <label>Expiry Date</label>
                   <input type="datetime-local" required

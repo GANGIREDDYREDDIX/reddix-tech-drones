@@ -161,9 +161,9 @@ function CustomerAuthForm() {
 
   return (
     <div className={styles.pageContainer}>
-      <button onClick={() => router.back()} style={{ position: 'absolute', top: '40px', left: '40px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', fontWeight: 500, zIndex: 10, background: 'none', border: 'none', cursor: 'pointer', padding: 0, font: 'inherit' }}>
-        <ChevronLeft size={20} /> Back
-      </button>
+      <Link href="/" style={{ position: 'absolute', top: '40px', left: '40px', display: 'flex', alignItems: 'center', gap: '8px', color: '#fff', textDecoration: 'none', fontWeight: 500, zIndex: 10 }}>
+        <ChevronLeft size={20} /> Back to Home
+      </Link>
       <div className={styles.bgCircle1} />
       <div className={styles.bgCircle2} />
 

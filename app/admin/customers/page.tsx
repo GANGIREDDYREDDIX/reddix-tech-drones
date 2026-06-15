@@ -55,6 +55,7 @@ export default function AdminCustomers() {
         <table className={styles.table}>
           <thead>
             <tr>
+              <th style={{ width: 48, textAlign: "center", color: "var(--text-secondary)", fontSize: "0.8rem" }}>#</th>
               <th>Customer</th>
               <th>Status</th>
               <th className={styles.textRight}>Total Orders</th>
@@ -65,11 +66,14 @@ export default function AdminCustomers() {
           </thead>
           <tbody>
             {loadingCustomers ? (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "24px" }}>Loading customers...</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>Loading customers...</td></tr>
             ) : customers.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: "24px" }}>No customers found</td></tr>
-            ) : customers.map(customer => (
+              <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px" }}>No customers found</td></tr>
+            ) : customers.map((customer, index) => (
               <tr key={customer.id}>
+                <td style={{ textAlign: "center", fontWeight: 600, fontSize: "0.85rem", color: "var(--text-secondary)", width: 48 }}>
+                  {index + 1}
+                </td>
                 <td>
                   <div className={styles.customerCell}>
                     <div className={styles.customerAvatar} style={{ background: getColor(customer.name) }}>

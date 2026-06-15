@@ -1,0 +1,138 @@
+/* ═══════════════════════════════════════
+   TERMS AND CONDITIONS — Stylesheet
+═══════════════════════════════════════ */
+
+.container {
+  min-height: 100vh;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  padding: 80px 24px;
+  font-family: inherit;
+}
+
+.inner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-cyan);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.backLink:hover {
+  color: #00e5ff;
+  transform: translateX(-4px);
+}
+
+.contentCard {
+  background: rgba(var(--text-primary-rgb), 0.03);
+  border: 1px solid rgba(var(--text-primary-rgb), 0.08);
+  border-radius: 24px;
+  padding: 48px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 48px;
+  line-height: 1.6;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.section {
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.section h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sectionNumber {
+  color: var(--accent-cyan);
+}
+
+.section h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 32px;
+  margin-bottom: 12px;
+}
+
+.section p {
+  margin-bottom: 16px;
+}
+
+.section p strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sectionList {
+  list-style-type: disc;
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+
+.sectionList li {
+  margin-bottom: 12px;
+}
+
+.footerNote {
+  margin-top: 64px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(var(--text-primary-rgb), 0.1);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 60px 16px;
+  }
+  
+  .contentCard {
+    padding: 32px 24px;
+  }
+  
+  .title {
+    font-size: 2.2rem;
+  }
+  
+  .section h2 {
+    font-size: 1.4rem;
+  }
+}

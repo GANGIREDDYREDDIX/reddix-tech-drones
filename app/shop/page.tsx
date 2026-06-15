@@ -437,7 +437,7 @@ export default function Shop() {
               <a href="/coming-soon">About Us</a>
               <a href="/coming-soon">Careers</a>
               <a href="/coming-soon">Privacy Policy</a>
-              <a href="/coming-soon">Terms of Service</a>
+              <Link href="/terms-and-conditions">Terms of Service</Link>
             </div>
           </div>
 

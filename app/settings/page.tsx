@@ -473,7 +473,13 @@ export default function AccountSettings() {
         <div>
           <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Billing Addresses</h3>
           <div className={styles.cardList} style={{ display: 'flex', flexDirection: 'column' }}>
-            {addresses.filter(a => a.type === 'Billing').length === 0 ? <p>No billing addresses found.</p> : addresses.filter(a => a.type === 'Billing').map(addr => {
+            {addresses.filter(a => a.type === 'Billing').length === 0 ? (
+              <div className={styles.emptyState} style={{ padding: '40px 20px' }}>
+                <MapPin size={32} className={styles.emptyStateIcon} />
+                <h3 className={styles.emptyStateTitle}>No Billing Addresses</h3>
+                <p className={styles.emptyStateDesc}>Add an address to speed up checkout.</p>
+              </div>
+            ) : addresses.filter(a => a.type === 'Billing').map(addr => {
               let parsedStreet = addr.street;
               let parsedObj = null;
               try {
@@ -508,7 +514,13 @@ export default function AccountSettings() {
         <div>
           <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1.1rem' }}>Shipping Addresses</h3>
           <div className={styles.cardList} style={{ display: 'flex', flexDirection: 'column' }}>
-            {addresses.filter(a => a.type === 'Shipping').length === 0 ? <p>No shipping addresses found.</p> : addresses.filter(a => a.type === 'Shipping').map(addr => {
+            {addresses.filter(a => a.type === 'Shipping').length === 0 ? (
+              <div className={styles.emptyState} style={{ padding: '40px 20px' }}>
+                <MapPin size={32} className={styles.emptyStateIcon} />
+                <h3 className={styles.emptyStateTitle}>No Shipping Addresses</h3>
+                <p className={styles.emptyStateDesc}>Add a shipping destination.</p>
+              </div>
+            ) : addresses.filter(a => a.type === 'Shipping').map(addr => {
               let parsedStreet = addr.street;
               let parsedObj = null;
               try {
@@ -557,7 +569,13 @@ export default function AccountSettings() {
         <button className={styles.addBtn} onClick={addPayment}><Plus size={16} /> Add New</button>
       </div>
       <div className={styles.cardList}>
-        {payments.length === 0 ? <p>No payment methods found.</p> : payments.map(pay => (
+        {payments.length === 0 ? (
+          <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
+            <CreditCard size={48} className={styles.emptyStateIcon} />
+            <h3 className={styles.emptyStateTitle}>No payment methods saved</h3>
+            <p className={styles.emptyStateDesc}>Add a card for faster checkout in the future.</p>
+          </div>
+        ) : payments.map(pay => (
           <div key={pay.id} className={styles.itemCard}>
             <div className={styles.itemCardHeader}>
               <span className={styles.itemType} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -612,7 +630,12 @@ export default function AccountSettings() {
       <h2 className={styles.tabTitle}>My Wishlist</h2>
       <div className={styles.productGrid}>
         {allProducts.filter(p => wishlist.includes(p.id)).length === 0 ? (
-          <p style={{ color: 'var(--text-secondary)' }}>Your wishlist is empty.</p>
+          <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
+            <Heart size={48} className={styles.emptyStateIcon} />
+            <h3 className={styles.emptyStateTitle}>Your wishlist is empty</h3>
+            <p className={styles.emptyStateDesc}>Save your favorite items here to review them later.</p>
+            <button className={styles.saveBtn} onClick={() => window.location.href = '/shop'}>Discover Products</button>
+          </div>
         ) : (
           allProducts.filter(p => wishlist.includes(p.id)).map((product) => (
             <div key={product.id} className={styles.productCard}>
@@ -641,7 +664,13 @@ export default function AccountSettings() {
         <button className={styles.addBtn} onClick={addPriceRequest}><Plus size={16} /> New Request</button>
       </div>
       <div className={styles.cardList}>
-        {priceRequests.length === 0 ? <p>No price requests found.</p> : priceRequests.map(req => {
+        {priceRequests.length === 0 ? (
+          <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
+            <FileText size={48} className={styles.emptyStateIcon} />
+            <h3 className={styles.emptyStateTitle}>No price requests found</h3>
+            <p className={styles.emptyStateDesc}>You haven't requested any custom prices yet.</p>
+          </div>
+        ) : priceRequests.map(req => {
           const product = allProducts.find(p => p.id === req.product_id);
           const productName = product ? product.name : `Product ID: ${req.product_id}`;
           return (
@@ -677,11 +706,11 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <h2 className={styles.tabTitle}>Compare Products</h2>
       {compareList.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', background: 'var(--background-secondary)', borderRadius: '12px', border: '2px dashed var(--nav-border)' }}>
-          <Scale size={48} color="#d1d5db" style={{ marginBottom: '16px' }} />
-          <h3 style={{ color: 'var(--text-primary)', marginBottom: '8px' }}>Your compare list is empty</h3>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Add products to compare their features and specifications.</p>
-          <button className={styles.saveBtn} style={{ margin: '0 auto' }} onClick={() => window.location.href = '/shop'}>Browse Products</button>
+        <div className={styles.emptyState}>
+          <Scale size={48} className={styles.emptyStateIcon} />
+          <h3 className={styles.emptyStateTitle}>Your compare list is empty</h3>
+          <p className={styles.emptyStateDesc}>Add products to compare their features and specifications.</p>
+          <button className={styles.saveBtn} onClick={() => window.location.href = '/shop'}>Browse Products</button>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(2, compareList.length)}, 1fr)`, gap: '20px', overflowX: 'auto', paddingBottom: '20px' }}>
@@ -718,7 +747,13 @@ export default function AccountSettings() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={styles.tabContent}>
       <h2 className={styles.tabTitle}>My Coupons</h2>
       <div className={styles.productGrid}>
-        {coupons.length === 0 ? <p>No coupons available right now.</p> : coupons.map(coupon => (
+        {coupons.length === 0 ? (
+          <div className={styles.emptyState} style={{ gridColumn: '1 / -1' }}>
+            <Ticket size={48} className={styles.emptyStateIcon} />
+            <h3 className={styles.emptyStateTitle}>No coupons available</h3>
+            <p className={styles.emptyStateDesc}>Check back later for special discounts and offers.</p>
+          </div>
+        ) : coupons.map(coupon => (
           <div key={coupon.id} className={styles.itemCard} style={{ borderLeft: '4px solid #10b981' }}>
             <h3 style={{ fontSize: '1.5rem', color: '#10b981', marginBottom: '8px' }}>{coupon.type === 'percentage' ? `${coupon.value}% OFF` : formatCurrency(coupon.value) + ' OFF'}</h3>
             <p style={{ color: 'var(--text-primary)', fontWeight: 600, marginBottom: '4px' }}>Discount Code</p>
